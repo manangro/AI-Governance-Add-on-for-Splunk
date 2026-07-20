@@ -1,6 +1,6 @@
 <form version="1.1">
   <label>Claude Enterprise - Security Audit</label>
-  <description>Authentication, administrative changes, data exports, and file activity from the Compliance API activity feed. Requires the Compliance Activity Feed input.</description>
+  <description>Access failures, administrative changes, data exposure, and anomalous activity from the Compliance API activity feed. Requires the Compliance Activity Feed input.</description>
   <fieldset submitButton="false">
     <input type="time" token="time">
       <label>Time Range</label>
@@ -12,32 +12,33 @@
   </fieldset>
   <row>
     <panel>
-      <title>Activity Events</title>
+      <title>User &amp; Admin Events</title>
       <single>
         <search>
-          <query>`claude_index` sourcetype="anthropic:compliance:activity" | stats count</query>
+          <query>`claude_index` sourcetype="anthropic:compliance:activity" NOT event_type=compliance_api_accessed | stats count</query>
           <earliest>$time.earliest$</earliest>
           <latest>$time.latest$</latest>
         </search>
         <option name="useThousandSeparators">1</option>
+        <option name="underLabel">excludes compliance_api_accessed</option>
       </single>
     </panel>
     <panel>
-      <title>Sign-in Events</title>
+      <title>Access Failures</title>
       <single>
         <search>
-          <query>`claude_index` sourcetype="anthropic:compliance:activity" (event_type=user_signed_in* OR event_type="user_signed_in" OR event_type=*login* OR event_type=*logged_in* OR event_type=user_authenticated* OR event_type=*signin* OR event_type=user_signed_out OR event_type=*logout*) | stats count</query>
+          <query>`claude_index` sourcetype="anthropic:compliance:activity" (event_type=*_access_failed OR event_type=*_failed OR event_type=user_signed_in* OR event_type=*login_failed*) | stats count</query>
           <earliest>$time.earliest$</earliest>
           <latest>$time.latest$</latest>
         </search>
-        <option name="useThousandSeparators">1</option>
+        <option name="underLabel">e.g. claude_chat_access_failed</option>
       </single>
     </panel>
     <panel>
-      <title>Admin / SSO Changes</title>
+      <title>Admin / Org Changes</title>
       <single>
         <search>
-          <query>`claude_index` sourcetype="anthropic:compliance:activity" (event_type=org_sso_* OR event_type=org_jit_* OR event_type=org_domain_* OR event_type=org_user_deleted OR event_type=admin_api_key_*) | stats count</query>
+          <query>`claude_index` sourcetype="anthropic:compliance:activity" (event_type=org_sso_* OR event_type=org_jit_* OR event_type=org_domain_* OR event_type=org_user_deleted OR event_type=admin_api_key_* OR event_type=api_key_* OR event_type=*_role_updated OR event_type=*spend_limit* OR event_type=claude_code_user_settings_updated OR event_type=*integration*) | stats count</query>
           <earliest>$time.earliest$</earliest>
           <latest>$time.latest$</latest>
         </search>
@@ -57,11 +58,23 @@
       <title>File Uploads</title>
       <single>
         <search>
-          <query>`claude_index` sourcetype="anthropic:compliance:activity" event_type=file_uploaded | stats count</query>
+          <query>`claude_index` sourcetype="anthropic:compliance:activity" (event_type=claude_file_uploaded OR event_type=file_uploaded) | stats count</query>
           <earliest>$time.earliest$</earliest>
           <latest>$time.latest$</latest>
         </search>
         <option name="useThousandSeparators">1</option>
+      </single>
+    </panel>
+    <panel>
+      <title>Compliance API Access</title>
+      <single>
+        <search>
+          <query>`claude_index` sourcetype="anthropic:compliance:activity" event_type=compliance_api_accessed | stats count</query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
+        </search>
+        <option name="useThousandSeparators">1</option>
+        <option name="underLabel">audit-data reads via API</option>
       </single>
     </panel>
   </row>
@@ -70,7 +83,7 @@
       <title>Activity by Event Type</title>
       <chart>
         <search>
-          <query>`claude_index` sourcetype="anthropic:compliance:activity" | where isnotnull(event_type) AND event_type!="" | timechart span=1d limit=15 useother=true count by event_type</query>
+          <query>`claude_index` sourcetype="anthropic:compliance:activity" NOT event_type=compliance_api_accessed | where isnotnull(event_type) AND event_type!="" | timechart span=1d limit=15 useother=true count by event_type</query>
           <earliest>$time.earliest$</earliest>
           <latest>$time.latest$</latest>
         </search>
@@ -93,7 +106,7 @@
       <title>Top Event Types</title>
       <chart>
         <search>
-          <query>`claude_index` sourcetype="anthropic:compliance:activity" | where isnotnull(event_type) AND event_type!="" | stats count by event_type | sort - count | head 15</query>
+          <query>`claude_index` sourcetype="anthropic:compliance:activity" NOT event_type=compliance_api_accessed | where isnotnull(event_type) AND event_type!="" | stats count by event_type | sort - count | head 15</query>
           <earliest>$time.earliest$</earliest>
           <latest>$time.latest$</latest>
         </search>
@@ -103,10 +116,10 @@
   </row>
   <row>
     <panel>
-      <title>Sign-ins by User and IP</title>
+      <title>User Activity by IP</title>
       <table>
         <search>
-          <query>`claude_index` sourcetype="anthropic:compliance:activity" (event_type=user_signed_in* OR event_type="user_signed_in" OR event_type=*login* OR event_type=*logged_in* OR event_type=user_authenticated* OR event_type=*signin*) | `claude_actor_email` | where (isnotnull(actor_email) AND actor_email!="null") OR (isnotnull(actor_user_id) AND actor_user_id!="null") | stats count earliest(_time) AS first_seen latest(_time) AS last_seen by actor_email, actor_ip_address | convert ctime(first_seen) ctime(last_seen) | sort - count</query>
+          <query>`claude_index` sourcetype="anthropic:compliance:activity" NOT actor_type="api_actor" | `claude_actor_email` | where isnotnull(actor_email) AND actor_email!="null" | stats count dc(event_type) AS event_types earliest(_time) AS first_seen latest(_time) AS last_seen by actor_email, actor_ip_address | convert ctime(first_seen) ctime(last_seen) | sort - count</query>
           <earliest>$time.earliest$</earliest>
           <latest>$time.latest$</latest>
         </search>
@@ -114,23 +127,10 @@
       </table>
     </panel>
     <panel>
-      <title>Users Signing In from Multiple IPs</title>
+      <title>Users Active from Multiple IPs</title>
       <table>
         <search>
-          <query>`claude_index` sourcetype="anthropic:compliance:activity" (event_type=user_signed_in* OR event_type="user_signed_in" OR event_type=*login* OR event_type=*logged_in* OR event_type=user_authenticated* OR event_type=*signin*) | `claude_actor_email` | where isnotnull(actor_email) AND actor_email!="null" | stats dc(actor_ip_address) AS distinct_ips values(actor_ip_address) AS ips by actor_email | where distinct_ips &gt; 1 | sort - distinct_ips</query>
-          <earliest>$time.earliest$</earliest>
-          <latest>$time.latest$</latest>
-        </search>
-        <option name="drilldown">none</option>
-      </table>
-    </panel>
-  </row>
-  <row>
-    <panel>
-      <title>Admin and Export Events</title>
-      <table>
-        <search>
-          <query>`claude_index` sourcetype="anthropic:compliance:activity" (event_type=org_sso_* OR event_type=org_jit_* OR event_type=org_domain_* OR event_type=org_user_deleted OR event_type=admin_api_key_* OR event_type=org_data_export_*) | `claude_actor_email` | table _time, event_type, actor_email, actor_user_id, actor_ip_address, organization_id | sort - _time</query>
+          <query>`claude_index` sourcetype="anthropic:compliance:activity" NOT actor_type="api_actor" | `claude_actor_email` | where isnotnull(actor_email) AND actor_email!="null" | stats dc(actor_ip_address) AS distinct_ips values(actor_ip_address) AS ips by actor_email | where distinct_ips &gt; 1 | sort - distinct_ips</query>
           <earliest>$time.earliest$</earliest>
           <latest>$time.latest$</latest>
         </search>
@@ -140,10 +140,58 @@
   </row>
   <row>
     <panel>
-      <title>File Uploads by User</title>
+      <title>Admin and Change Events</title>
       <table>
         <search>
-          <query>`claude_index` sourcetype="anthropic:compliance:activity" event_type=file_uploaded | `claude_actor_email` | stats count latest(_time) AS last_upload by actor_email, claude_project_id | convert ctime(last_upload) | sort - count | head 20</query>
+          <query>`claude_index` sourcetype="anthropic:compliance:activity" (event_type=org_sso_* OR event_type=org_jit_* OR event_type=org_domain_* OR event_type=org_user_deleted OR event_type=admin_api_key_* OR event_type=api_key_* OR event_type=*_role_updated OR event_type=*spend_limit* OR event_type=claude_code_user_settings_updated OR event_type=*integration* OR event_type=org_data_export_*) NOT event_type=org_user_invite_* | `claude_actor_email` | table _time, event_type, actor_email, actor_ip_address, organization_id | sort - _time | head 50</query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
+        </search>
+        <option name="drilldown">none</option>
+      </table>
+    </panel>
+    <panel>
+      <title>Access Failure Detail</title>
+      <table>
+        <search>
+          <query>`claude_index` sourcetype="anthropic:compliance:activity" (event_type=*_access_failed OR event_type=*_failed) | `claude_actor_email` | table _time, event_type, actor_email, actor_ip_address, claude_chat_id, claude_project_id | sort - _time | head 50</query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
+        </search>
+        <option name="drilldown">none</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>File Activity by User</title>
+      <table>
+        <search>
+          <query>`claude_index` sourcetype="anthropic:compliance:activity" (event_type=claude_file_* OR event_type=file_uploaded) | `claude_actor_email` | stats count by actor_email, event_type | sort - count | head 25</query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
+        </search>
+        <option name="drilldown">none</option>
+      </table>
+    </panel>
+    <panel>
+      <title>Artifact Publishing &amp; Sharing (Exposure)</title>
+      <table>
+        <search>
+          <query>`claude_index` sourcetype="anthropic:compliance:activity" (event_type=claude_artifact_published OR event_type=claude_artifact_sharing_updated OR event_type=*_sharing_updated OR event_type=*_visibility_changed OR event_type=project_visibility_changed) | `claude_actor_email` | table _time, event_type, actor_email, actor_ip_address, claude_project_id | sort - _time | head 50</query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
+        </search>
+        <option name="drilldown">none</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Compliance API Access by Source</title>
+      <table>
+        <search>
+          <query>`claude_index` sourcetype="anthropic:compliance:activity" event_type=compliance_api_accessed | stats count earliest(_time) AS first_seen latest(_time) AS last_seen by actor_ip_address, actor_type, actor_api_key_id | convert ctime(first_seen) ctime(last_seen) | sort - count</query>
           <earliest>$time.earliest$</earliest>
           <latest>$time.latest$</latest>
         </search>
@@ -154,7 +202,7 @@
       <title>Recent Activity</title>
       <table>
         <search>
-          <query>`claude_index` sourcetype="anthropic:compliance:activity" | `claude_actor_email` | table _time, event_type, actor_type, actor_email, actor_ip_address, organization_id | sort - _time | head 50</query>
+          <query>`claude_index` sourcetype="anthropic:compliance:activity" NOT event_type=compliance_api_accessed | `claude_actor_email` | table _time, event_type, actor_type, actor_email, actor_ip_address, organization_id | sort - _time | head 50</query>
           <earliest>$time.earliest$</earliest>
           <latest>$time.latest$</latest>
         </search>

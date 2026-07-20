@@ -86,7 +86,7 @@
       <title>Project and Chat Events</title>
       <single>
         <search>
-          <query>`claude_index` sourcetype="anthropic:compliance:activity" (event_type=project_* OR event_type=conversation_* OR event_type=claude_chat_*) | stats count</query>
+          <query>`claude_index` sourcetype="anthropic:compliance:activity" (event_type=project_* OR event_type=conversation_* OR event_type=claude_chat_* OR event_type=claude_artifact_* OR event_type=platform_memory_*) | stats count</query>
           <earliest>$time.earliest$</earliest>
           <latest>$time.latest$</latest>
         </search>
@@ -142,7 +142,7 @@
       <title>Project and Chat Activity</title>
       <table>
         <search>
-          <query>`claude_index` sourcetype="anthropic:compliance:activity" (event_type=project_* OR event_type=conversation_* OR event_type=claude_chat_*) | `claude_actor_email` | table _time, event_type, actor_email, claude_project_id, claude_chat_id | sort - _time | head 50</query>
+          <query>`claude_index` sourcetype="anthropic:compliance:activity" (event_type=project_* OR event_type=conversation_* OR event_type=claude_chat_* OR event_type=claude_artifact_* OR event_type=platform_memory_*) | `claude_actor_email` | table _time, event_type, actor_email, claude_project_id, claude_chat_id | sort - _time | head 50</query>
           <earliest>$time.earliest$</earliest>
           <latest>$time.latest$</latest>
         </search>
