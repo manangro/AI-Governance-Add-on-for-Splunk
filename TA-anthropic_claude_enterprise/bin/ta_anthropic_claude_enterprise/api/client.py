@@ -237,10 +237,27 @@ class AnthropicClient:
             query["page"] = next_page
 
     def admin_get(self, path: str, params: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
-        """Admin API GET using the Compliance/Admin key (x-api-key header)."""
-        if not self.compliance_api_key:
+        """Admin API GET (x-api-key header).
+
+        Tries the compliance key first, then the analytics key: either slot
+        may hold the org's admin key depending on how the account was set up.
+        """
+        keys: List[str] = []
+        for key in (self.compliance_api_key, self.analytics_api_key):
+            if key and key not in keys:
+                keys.append(key)
+        if not keys:
             raise AnthropicAPIError(401, "Admin API key is required for this request")
-        return self._request("GET", path, params=params, api_key=self.compliance_api_key)
+        last_error: Optional[AnthropicAPIError] = None
+        for key in keys:
+            try:
+                return self._request("GET", path, params=params, api_key=key)
+            except AnthropicAPIError as exc:
+                if exc.status_code in (401, 403) and key != keys[-1]:
+                    last_error = exc
+                    continue
+                raise
+        raise last_error  # pragma: no cover - loop always returns or raises
 
     def paginate_admin(
         self,

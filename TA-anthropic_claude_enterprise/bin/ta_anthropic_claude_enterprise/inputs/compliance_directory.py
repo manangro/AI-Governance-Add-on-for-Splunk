@@ -3,12 +3,12 @@
 from __future__ import annotations
 
 import time
-from typing import Any, Dict, Tuple
+from typing import Any, Dict, Iterator, Tuple
 
 from solnlib import log
 from splunklib import modularinput as smi
 
-from ta_anthropic_claude_enterprise.account import build_client_from_account, get_account_config
+from ta_anthropic_claude_enterprise.account import build_client_from_account
 from ta_anthropic_claude_enterprise.api.client import AnthropicAPIError
 from ta_anthropic_claude_enterprise.api.compliance import ComplianceAPI
 from ta_anthropic_claude_enterprise.checkpoint import CheckpointStore
@@ -74,12 +74,6 @@ def _collect_directory(
     event_writer: smi.EventWriter,
 ) -> Dict[str, int]:
     account_name = input_item.get("account")
-    account = get_account_config(session_key, account_name)
-    if account.get("compliance_key_type") == "admin_activities_only":
-        raise ValueError(
-            "Directory sync requires a Compliance Access Key (compliance_full), not an Admin API key"
-        )
-
     client = build_client_from_account(session_key, account_name)
     compliance = ComplianceAPI(client)
     index = input_item.get("index")
@@ -91,9 +85,13 @@ def _collect_directory(
     }
 
     sync_handlers: Tuple[Tuple[str, str, Any], ...] = (
-        ("users", SOURCETYPE_COMPLIANCE_USER, compliance.list_users),
-        ("organizations", SOURCETYPE_COMPLIANCE_ORGANIZATION, compliance.list_organizations),
-        ("groups", SOURCETYPE_COMPLIANCE_GROUP, compliance.list_groups),
+        ("users", SOURCETYPE_COMPLIANCE_USER, lambda: _iter_users(compliance, client)),
+        (
+            "organizations",
+            SOURCETYPE_COMPLIANCE_ORGANIZATION,
+            lambda: _iter_organizations(compliance, client),
+        ),
+        ("groups", SOURCETYPE_COMPLIANCE_GROUP, lambda: _iter_groups(compliance, client)),
     )
 
     for resource_name, sourcetype, iterator in sync_handlers:
@@ -109,14 +107,55 @@ def _collect_directory(
                 )
                 counts[sourcetype] += 1
         except AnthropicAPIError as exc:
-            if exc.status_code == 403:
-                logger.warning(
-                    "Skipping %s sync: insufficient Compliance API scope (%s)",
-                    resource_name,
-                    exc,
-                )
-            else:
-                raise
+            logger.warning(
+                "Skipping %s sync: neither the Compliance directory API nor the "
+                "Admin API is reachable with the configured keys (%s)",
+                resource_name,
+                exc,
+            )
 
     CheckpointStore(session_key).set(input_key, {"last_sync_epoch": int(time.time())})
     return counts
+
+
+def _is_fallback_status(exc: AnthropicAPIError) -> bool:
+    """Compliance directory endpoints unavailable to this key -> try Admin API."""
+    return exc.status_code in (401, 403, 404)
+
+
+def _iter_users(compliance: ComplianceAPI, client) -> Iterator[Dict[str, Any]]:
+    """Users from the Compliance directory, falling back to the Admin API."""
+    try:
+        yield from compliance.list_users()
+        return
+    except AnthropicAPIError as exc:
+        if not _is_fallback_status(exc):
+            raise
+    for record in client.paginate_admin("/v1/organizations/users"):
+        if record.get("email") and not record.get("email_address"):
+            record["email_address"] = record["email"]
+        yield record
+
+
+def _iter_organizations(compliance: ComplianceAPI, client) -> Iterator[Dict[str, Any]]:
+    """Organizations from the Compliance directory, falling back to Admin API."""
+    try:
+        yield from compliance.list_organizations()
+        return
+    except AnthropicAPIError as exc:
+        if not _is_fallback_status(exc):
+            raise
+    record = client.admin_get("/v1/organizations/me")
+    if isinstance(record, dict) and record:
+        yield record
+
+
+def _iter_groups(compliance: ComplianceAPI, client) -> Iterator[Dict[str, Any]]:
+    """Groups from the Compliance directory, falling back to Admin API workspaces."""
+    try:
+        yield from compliance.list_groups()
+        return
+    except AnthropicAPIError as exc:
+        if not _is_fallback_status(exc):
+            raise
+    yield from client.paginate_admin("/v1/organizations/workspaces")

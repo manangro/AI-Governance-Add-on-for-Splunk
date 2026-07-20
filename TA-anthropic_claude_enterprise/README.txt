@@ -54,6 +54,10 @@ CONFIGURATION
      changes, data exports, file uploads, project/conversation events).
      Suggested interval: 300-3600 seconds.
    * Compliance Directory Sync - users, organizations, groups snapshots.
+     Tries the Compliance directory API first and automatically falls back
+     to the Anthropic Admin API (users, organization, workspaces) when the
+     key cannot access the directory endpoints; an admin key
+     (sk-ant-admin...) in either credential slot works.
      Suggested interval: 43200-86400 seconds.
    * Analytics Reports - adoption, usage, cost, per-user reports, and
      spend limits. Suggested interval: 86400 seconds (data is finalized

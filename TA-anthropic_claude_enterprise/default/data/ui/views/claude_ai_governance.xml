@@ -10,8 +10,36 @@
       </default>
     </input>
   </fieldset>
+  <search>
+    <query>`claude_index` (sourcetype="anthropic:compliance:user" OR sourcetype="anthropic:compliance:group") | head 1 | stats count</query>
+    <earliest>-90d@d</earliest>
+    <latest>now</latest>
+    <done>
+      <condition match="$result.count$ == 0">
+        <set token="show_directory_setup">true</set>
+        <unset token="has_directory"></unset>
+      </condition>
+      <condition>
+        <set token="has_directory">true</set>
+        <unset token="show_directory_setup"></unset>
+      </condition>
+    </done>
+  </search>
+  <search>
+    <query>`claude_index` sourcetype="anthropic:compliance:activity" event_type=*agent* | head 1 | stats count</query>
+    <earliest>-90d@d</earliest>
+    <latest>now</latest>
+    <done>
+      <condition match="$result.count$ == 0">
+        <unset token="has_agent"></unset>
+      </condition>
+      <condition>
+        <set token="has_agent">true</set>
+      </condition>
+    </done>
+  </search>
   <row>
-    <panel>
+    <panel depends="$has_directory$">
       <title>Directory Users</title>
       <single>
         <search>
@@ -33,7 +61,7 @@
         <option name="underLabel">distinct emails in activity feed</option>
       </single>
     </panel>
-    <panel>
+    <panel depends="$has_directory$">
       <title>Directory Groups</title>
       <single>
         <search>
@@ -78,7 +106,7 @@
         <option name="drilldown">none</option>
       </table>
     </panel>
-    <panel>
+    <panel depends="$has_directory$">
       <title>Groups</title>
       <table>
         <search>
@@ -88,6 +116,14 @@
         </search>
         <option name="drilldown">none</option>
       </table>
+    </panel>
+    <panel depends="$show_directory_setup$">
+      <title>Directory sync is not collecting yet</title>
+      <html>
+        <p>The user/group roster panels read <code>anthropic:compliance:user</code> and <code>anthropic:compliance:group</code>, produced by the <b>Compliance Directory Sync</b> input. To enable them, go to <b>Inputs &gt; Create New Input &gt; Compliance Directory Sync</b> and select your account (interval 86400 recommended).</p>
+        <p>The input first tries the Compliance directory API; if your key cannot access it, it automatically falls back to the Anthropic <b>Admin API</b> (users, organization, workspaces) using your compliance or analytics key — an admin key (<code>sk-ant-admin...</code>) in either slot works. Errors are logged in <code>index=_internal source=*ta_anthropic_claude_enterprise*</code>.</p>
+        <p>Until directory data arrives, the Users table below is built from activity-feed emails only.</p>
+      </html>
     </panel>
   </row>
   <row>
@@ -114,7 +150,7 @@
       </table>
     </panel>
   </row>
-  <row>
+  <row depends="$has_agent$">
     <panel>
       <title>Agent Lifecycle Events</title>
       <single>
