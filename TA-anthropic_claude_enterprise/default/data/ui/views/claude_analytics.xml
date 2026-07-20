@@ -41,7 +41,7 @@
       <html>
         <p>These panels read the <code>anthropic:analytics:*</code> sourcetypes, which come from the <b>Analytics Reports</b> input. Anthropic finalizes analytics with a <b>~3 day lag</b>, so short windows such as Last 24 hours are often empty by design - try Last 7 or 30 days first. If widening the range does not help:</p>
         <ol>
-          <li>On <b>Configuration &gt; Account</b>, edit your account and add an <b>Analytics API key</b> (an Anthropic admin key with the <code>read:analytics</code> scope; spend-limit panels also need admin read access). The compliance key alone is not enough.</li>
+          <li>Make sure your API key includes the <code>read:analytics</code> scope (and <code>read:spend_limits</code> for the spend-limit panels). If one key carries all scopes, entering it as the Compliance key on <b>Configuration &gt; Account</b> is enough - the Analytics key field can stay blank and the compliance key is reused. Otherwise add a dedicated key with those scopes in the <b>Analytics API key</b> field.</li>
           <li>On <b>Inputs</b>, create an <b>Analytics Reports</b> input for that account (interval 86400 recommended).</li>
           <li>Anthropic finalizes analytics with a ~3 day lag, so the newest data point will be about 3 days old. Widen the time range if needed.</li>
           <li>If you ingest into a dedicated index, update the <code>claude_index</code> macro (Settings &gt; Advanced search &gt; Search macros).</li>

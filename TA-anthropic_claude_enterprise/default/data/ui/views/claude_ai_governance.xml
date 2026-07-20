@@ -142,7 +142,7 @@
       <title>Directory sync is not collecting yet</title>
       <html>
         <p>The user/group roster panels read <code>anthropic:compliance:user</code> and <code>anthropic:compliance:group</code>, produced by the <b>Compliance Directory Sync</b> input. To enable them, go to <b>Inputs &gt; Create New Input &gt; Compliance Directory Sync</b> and select your account (interval 86400 recommended).</p>
-        <p>The input first tries the Compliance directory API; if your key cannot access it, it automatically falls back to the Anthropic <b>Admin API</b> (users, organization, workspaces) using your compliance or analytics key — an admin key (<code>sk-ant-admin...</code>) in either slot works. Errors are logged in <code>index=_internal source=*ta_anthropic_claude_enterprise*</code>.</p>
+        <p>The input first tries the Compliance directory API; if your key cannot access it, it automatically falls back to the Anthropic <b>Admin API</b> (users, organization, workspaces) using your compliance or analytics key — a key with the <code>read:members</code> scope in either slot works. Errors are logged in <code>index=_internal source=*ta_anthropic_claude_enterprise*</code>.</p>
         <p>Until directory data arrives, the Users table below is built from activity-feed emails only.</p>
       </html>
     </panel>

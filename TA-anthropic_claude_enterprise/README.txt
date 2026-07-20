@@ -1,7 +1,7 @@
 Anthropic Claude Enterprise Add-on for Splunk
 ==============================================
 
-Version: 1.2.0
+Version: 1.2.1
 Author: Manan Grover
 License: Apache-2.0
 
@@ -24,11 +24,18 @@ PREREQUISITES
 -------------
 * Splunk Enterprise 9.x/10.x or Splunk Cloud Platform.
 * A Claude Enterprise organization.
-* API keys created by a Claude Enterprise admin:
-  - Compliance Access Key (scope: read:compliance_activities and directory
-    read scopes) for the Compliance inputs.
-  - Admin/Analytics API key (scope: read:analytics; spend-limit endpoints
-    also require admin read scopes) for the Analytics Reports input.
+* An enterprise API key created by a Claude Enterprise admin. Scopes are
+  selected when the key is created; grant the ones for the inputs you use:
+  - read:compliance_activities            Compliance Activity Feed input
+  - read:compliance_user_data,
+    read:compliance_org_data              Compliance Directory Sync and
+                                          Content Export inputs
+  - read:analytics                        Analytics Reports input
+  - read:spend_limits                     spend-limit panels/reports
+  - read:members, read:rbac_groups        Admin API directory fallback
+  A single key with all read scopes can be entered as the Compliance key;
+  the Analytics key field may then stay blank (the compliance key is
+  reused). Separate keys per concern also work.
 * Outbound HTTPS access from the collection node to https://api.anthropic.com
   (directly or through the optional proxy configured on the account).
 
@@ -56,8 +63,8 @@ CONFIGURATION
    * Compliance Directory Sync - users, organizations, groups snapshots.
      Tries the Compliance directory API first and automatically falls back
      to the Anthropic Admin API (users, organization, workspaces) when the
-     key cannot access the directory endpoints; an admin key
-     (sk-ant-admin...) in either credential slot works.
+     key cannot access the directory endpoints; requires read:members (or
+     the compliance directory read scopes) on the key.
      Suggested interval: 43200-86400 seconds.
    * Analytics Reports - adoption, usage, cost, per-user reports, and
      spend limits. Suggested interval: 86400 seconds (data is finalized
@@ -122,8 +129,10 @@ TROUBLESHOOTING
 * Blank analytics panels: the Analytics API finalizes data with about a
   3-day lag; make sure the Analytics Reports input has run and that the
   claude_index macro matches your index.
-* 403 errors: the API key is missing a required scope, or the Compliance
-  API is not enabled for your organization.
+* 401/403 errors: the API key is missing a required scope (see
+  PREREQUISITES), or the Compliance API is not enabled for your
+  organization. The analytics client tries both x-api-key and bearer
+  authentication before giving up.
 * Checkpoints are stored in the KV Store collection
   ta_anthropic_claude_enterprise_checkpoints (search-head-cluster safe).
 
@@ -136,6 +145,13 @@ encrypted and are never written to logs.
 
 RELEASE NOTES
 -------------
+1.2.1
+* Analytics API client authenticates with x-api-key first (matching
+  unified scope-based enterprise keys) and retries with bearer auth,
+  fixing 401s when a single all-scope key is used for analytics.
+* Clear, actionable error message when the key lacks read:analytics.
+* Documentation updated for scope-based enterprise API keys.
+
 1.2.0
 * All dashboards default to Last 24 hours and include a user filter.
 * Security Audit rebuilt around the real Compliance API event taxonomy

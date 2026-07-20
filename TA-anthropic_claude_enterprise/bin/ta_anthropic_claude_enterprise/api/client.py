@@ -174,13 +174,44 @@ class AnthropicClient:
         return self._request("GET", path, params=params, api_key=self.compliance_api_key)
 
     def analytics_get(self, path: str, params: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
-        return self._request(
-            "GET",
-            path,
-            params=params,
-            api_key=self.analytics_api_key,
-            use_bearer=True,
-        )
+        """Analytics API GET.
+
+        Unified enterprise API keys (scope-based, e.g. read:analytics)
+        authenticate with the x-api-key header like every other Anthropic
+        endpoint; some deployments issue bearer-style analytics tokens
+        instead. Try x-api-key first and retry once with a bearer header
+        on an auth error.
+        """
+        try:
+            return self._request(
+                "GET",
+                path,
+                params=params,
+                api_key=self.analytics_api_key,
+                use_bearer=False,
+            )
+        except AnthropicAPIError as exc:
+            if exc.status_code not in (401, 403):
+                raise
+            try:
+                return self._request(
+                    "GET",
+                    path,
+                    params=params,
+                    api_key=self.analytics_api_key,
+                    use_bearer=True,
+                )
+            except AnthropicAPIError as bearer_exc:
+                if bearer_exc.status_code in (401, 403):
+                    raise AnthropicAPIError(
+                        bearer_exc.status_code,
+                        "Analytics API rejected the key with both x-api-key and "
+                        "bearer auth. Ensure the key includes the read:analytics "
+                        "scope (and read:spend_limits for spend panels). "
+                        f"Original error: {bearer_exc}",
+                        bearer_exc.response_body,
+                    ) from bearer_exc
+                raise
 
     def paginate_compliance(
         self,
