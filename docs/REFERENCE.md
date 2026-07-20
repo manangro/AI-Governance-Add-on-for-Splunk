@@ -25,6 +25,16 @@
 
 All events are JSON (`KV_MODE = json`), search-time extraction only.
 
+### Legacy interoperability
+
+Events already collected by the **Anthropic Claude Enterprise Add-on**
+(`anthropic:compliance:activity|user|group|organization|chat_content|file_metadata`,
+`anthropic:analytics:summary|usage|cost|user_usage|user_cost|user_activity|spend_limit|spend_limit_request`)
+are automatically projected into the `aigov_*` field model via search-time
+`EVAL` props and are included in the `aigov_all` / `aigov_audit` /
+`aigov_directory` / `aigov_usage` / `aigov_cost` macros. Dashboards and
+alerts therefore work on that data without re-ingestion.
+
 ## Normalized fields (present on every event)
 
 | Field | Values / example |

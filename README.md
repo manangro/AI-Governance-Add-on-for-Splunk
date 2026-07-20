@@ -25,6 +25,7 @@ Built with the [Splunk UCC framework](https://splunk.github.io/addonfactory-ucc-
 - **Ready-to-enable alerts** (shipped disabled): API key created/deleted, admin/SSO change, data export, new AI user, off-hours spike, daily spend threshold.
 - **Cloud & on-prem** — SHC-safe KV Store checkpointing, `python.required = 3.13` (code also runs on 3.9 for older on-prem), HTTPS-only with cert verification, optional per-account proxy.
 - **CIM hooks** — eventtypes tagged `authentication`, `change`, `audit`.
+- **Works with existing Anthropic TA data** — if the Anthropic Claude Enterprise Add-on (`TA-anthropic_claude_enterprise`) is already ingesting data (`anthropic:compliance:*`, `anthropic:analytics:*` sourcetypes), search-time field mappings project those events into the `aigov_*` model so every dashboard, macro and alert works on that data too — no re-ingestion needed.
 
 ## Repository layout
 

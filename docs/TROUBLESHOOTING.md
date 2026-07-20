@@ -23,6 +23,7 @@
 | `Authorization_RequestDenied` (Microsoft) | Application permissions granted but **admin consent** missing, or wrong permission type (delegated instead of application). |
 | Copilot audit input logs "still running" for many cycles | Normal: Graph audit queries are asynchronous and can take tens of minutes for large windows. If stuck >24 h, delete the checkpoint (below) to force a fresh query. |
 | Dashboards empty but data exists | `aigov_index` macro still `index=*` restricted by role, or events in an index the role can't search. Point the macro at the right index. |
+| Dashboards empty with Anthropic Claude Enterprise TA data (`anthropic:*` sourcetypes) | Requires v1.0.0+ of this app which maps those sourcetypes into the `aigov_*` model at search time. Ensure this app is installed on the search head and the `aigov_index` macro covers the index that TA writes to. |
 | Duplicate events after re-enabling an input | Checkpoint was cleared; overlap with `backfill_days`. Dedup on provider event `id` if needed. |
 | No events on an SHC member | Expected — inputs should run on one collection node; checkpoints are per-instance KV Store. |
 | `KV Store initialization failed` | KV Store disabled on the collection node (common on HFs with `kvstore disabled=true`). Enable KV Store or run inputs on the SH tier. |
