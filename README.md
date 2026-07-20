@@ -93,3 +93,10 @@ After creating inputs, point the `aigov_index` macro (Settings → Advanced sear
 ## License
 
 Apache-2.0
+
+## Documentation
+
+Full user and publisher docs live in [`docs/`](docs/):
+
+- [Installation](docs/INSTALLATION.md) · [Configuration](docs/CONFIGURATION.md) · [Reference](docs/REFERENCE.md) · [Troubleshooting](docs/TROUBLESHOOTING.md) · [Release notes](docs/RELEASE_NOTES.md)
+- [Splunkbase publishing runbook](docs/SPLUNKBASE_SUBMISSION.md) and ready-to-paste [listing copy](docs/DETAILS.md)
