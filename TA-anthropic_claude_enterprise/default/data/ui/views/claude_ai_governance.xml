@@ -5,9 +5,30 @@
     <input type="time" token="time">
       <label>Time Range</label>
       <default>
-        <earliest>-14d@d</earliest>
+        <earliest>-24h</earliest>
         <latest>now</latest>
       </default>
+    </input>
+    <input type="dropdown" token="user">
+      <label>User</label>
+      <choice value="*">All users</choice>
+      <search>
+        <query>`claude_index` sourcetype="anthropic:compliance:activity" | `claude_actor_email` | where isnotnull(actor_email) AND actor_email!="null" | stats count by actor_email | sort actor_email</query>
+        <earliest>-90d@d</earliest>
+        <latest>now</latest>
+      </search>
+      <fieldForLabel>actor_email</fieldForLabel>
+      <fieldForValue>actor_email</fieldForValue>
+      <default>*</default>
+      <initialValue>*</initialValue>
+      <change>
+        <condition value="*">
+          <set token="user_filter"></set>
+        </condition>
+        <condition>
+          <set token="user_filter">(actor_email="$value$" OR entity_email="$value$" OR target_email="$value$")</set>
+        </condition>
+      </change>
     </input>
   </fieldset>
   <search>
@@ -54,7 +75,7 @@
       <title>Active Users (Activity Feed)</title>
       <single>
         <search>
-          <query>`claude_index` sourcetype="anthropic:compliance:activity" | `claude_actor_email` | where isnotnull(actor_email) AND actor_email!="" AND actor_email!="null" | stats dc(actor_email) AS count</query>
+          <query>`claude_index` sourcetype="anthropic:compliance:activity" $user_filter$ | `claude_actor_email` | where isnotnull(actor_email) AND actor_email!="" AND actor_email!="null" | stats dc(actor_email) AS count</query>
           <earliest>$time.earliest$</earliest>
           <latest>$time.latest$</latest>
         </search>
@@ -76,7 +97,7 @@
       <title>User Invites</title>
       <single>
         <search>
-          <query>`claude_index` sourcetype="anthropic:compliance:activity" event_type=org_user_invite_* | stats count</query>
+          <query>`claude_index` sourcetype="anthropic:compliance:activity" $user_filter$ event_type=org_user_invite_* | stats count</query>
           <earliest>$time.earliest$</earliest>
           <latest>$time.latest$</latest>
         </search>
@@ -86,7 +107,7 @@
       <title>Project and Chat Events</title>
       <single>
         <search>
-          <query>`claude_index` sourcetype="anthropic:compliance:activity" (event_type=project_* OR event_type=conversation_* OR event_type=claude_chat_* OR event_type=claude_artifact_* OR event_type=platform_memory_*) | stats count</query>
+          <query>`claude_index` sourcetype="anthropic:compliance:activity" (event_type=project_* OR event_type=conversation_* OR event_type=claude_chat_* OR event_type=claude_artifact_* OR event_type=platform_memory_*) $user_filter$ | stats count</query>
           <earliest>$time.earliest$</earliest>
           <latest>$time.latest$</latest>
         </search>
@@ -99,7 +120,7 @@
       <title>Users</title>
       <table>
         <search>
-          <query>`claude_index` sourcetype="anthropic:compliance:user" | sort - _time | dedup id | eval source_of_record="directory" | table email_address, name, role, status, id, source_of_record | append [ search `claude_index` sourcetype="anthropic:compliance:activity" | eval email_address=coalesce(actor_email, entity_email, target_email) | where isnotnull(email_address) AND email_address!="" AND email_address!="null" | stats count latest(_time) AS last_seen by email_address | eval name=email_address, role="-", status="active", id=email_address, source_of_record="activity" | table email_address, name, role, status, id, source_of_record ] | sort source_of_record, email_address | dedup email_address</query>
+          <query>`claude_index` sourcetype="anthropic:compliance:user" (("$user$"="*") OR email_address="$user$") | sort - _time | dedup id | eval source_of_record="directory" | table email_address, name, role, status, id, source_of_record | append [ search `claude_index` sourcetype="anthropic:compliance:activity" $user_filter$ | eval email_address=coalesce(actor_email, entity_email, target_email) | where isnotnull(email_address) AND email_address!="" AND email_address!="null" | stats count latest(_time) AS last_seen by email_address | eval name=email_address, role="-", status="active", id=email_address, source_of_record="activity" | table email_address, name, role, status, id, source_of_record ] | sort source_of_record, email_address | dedup email_address</query>
           <earliest>-90d@d</earliest>
           <latest>now</latest>
         </search>
@@ -131,7 +152,7 @@
       <title>Invite Events</title>
       <table>
         <search>
-          <query>`claude_index` sourcetype="anthropic:compliance:activity" event_type=org_user_invite_* | `claude_actor_email` | table _time, event_type, actor_email, actor_user_id, organization_id | sort - _time</query>
+          <query>`claude_index` sourcetype="anthropic:compliance:activity" $user_filter$ event_type=org_user_invite_* | `claude_actor_email` | table _time, event_type, actor_email, actor_user_id, organization_id | sort - _time</query>
           <earliest>$time.earliest$</earliest>
           <latest>$time.latest$</latest>
         </search>
@@ -142,7 +163,7 @@
       <title>Project and Chat Activity</title>
       <table>
         <search>
-          <query>`claude_index` sourcetype="anthropic:compliance:activity" (event_type=project_* OR event_type=conversation_* OR event_type=claude_chat_* OR event_type=claude_artifact_* OR event_type=platform_memory_*) | `claude_actor_email` | table _time, event_type, actor_email, claude_project_id, claude_chat_id | sort - _time | head 50</query>
+          <query>`claude_index` sourcetype="anthropic:compliance:activity" (event_type=project_* OR event_type=conversation_* OR event_type=claude_chat_* OR event_type=claude_artifact_* OR event_type=platform_memory_*) $user_filter$ | `claude_actor_email` | table _time, event_type, actor_email, claude_project_id, claude_chat_id | sort - _time | head 50</query>
           <earliest>$time.earliest$</earliest>
           <latest>$time.latest$</latest>
         </search>
@@ -155,7 +176,7 @@
       <title>Agent Lifecycle Events</title>
       <single>
         <search>
-          <query>`claude_index` sourcetype="anthropic:compliance:activity" event_type=*agent* | stats count</query>
+          <query>`claude_index` sourcetype="anthropic:compliance:activity" event_type=*agent* $user_filter$ | stats count</query>
           <earliest>$time.earliest$</earliest>
           <latest>$time.latest$</latest>
         </search>
@@ -166,7 +187,7 @@
       <title>Agent Lifecycle Detail</title>
       <table>
         <search>
-          <query>`claude_index` sourcetype="anthropic:compliance:activity" event_type=*agent* | `claude_actor_email` | table _time, event_type, actor_email, actor_ip_address, claude_project_id, organization_id | sort - _time | head 50</query>
+          <query>`claude_index` sourcetype="anthropic:compliance:activity" event_type=*agent* $user_filter$ | `claude_actor_email` | table _time, event_type, actor_email, actor_ip_address, claude_project_id, organization_id | sort - _time | head 50</query>
           <earliest>$time.earliest$</earliest>
           <latest>$time.latest$</latest>
         </search>

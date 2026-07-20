@@ -1,7 +1,7 @@
 Anthropic Claude Enterprise Add-on for Splunk
 ==============================================
 
-Version: 1.1.0
+Version: 1.2.0
 Author: Manan Grover
 License: Apache-2.0
 
@@ -100,8 +100,10 @@ DASHBOARDS
   hit rate (tokenomics), spend by product/model, blended cost per 1M
   tokens, top users, spend-limit utilization, pending limit requests,
   Claude Code tool acceptance, connector usage.
-* Security Audit - sign-ins by user/IP, multi-IP sign-ins, admin/SSO
-  changes, data exports, file uploads, full activity audit trail.
+* Security Audit - access failures, admin and org changes (API keys,
+  roles, spend limits, integrations), data exports, file activity,
+  artifact publishing/sharing exposure, user activity by IP with
+  multi-IP anomalies, and compliance-API access auditing.
 * Governance - directory users/groups, invitations, project and
   conversation activity, agent lifecycle events.
 * Monitoring Dashboard (UCC) - add-on internal health, errors, and
@@ -109,9 +111,10 @@ DASHBOARDS
 
 SAVED SEARCHES
 --------------
-Five saved searches ship disabled and unscheduled (multi-IP sign-ins, SSO
-configuration change, data export started, top cost users, users near
-spend limit). Review, adjust thresholds, then enable and schedule.
+Six saved searches ship disabled and unscheduled (multi-IP user activity,
+access failures, SSO configuration change, data export started, top cost
+users, users near spend limit). Review, adjust thresholds, then enable
+and schedule.
 
 TROUBLESHOOTING
 ---------------
@@ -133,6 +136,21 @@ encrypted and are never written to logs.
 
 RELEASE NOTES
 -------------
+1.2.0
+* All dashboards default to Last 24 hours and include a user filter.
+* Security Audit rebuilt around the real Compliance API event taxonomy
+  (claude_* events): access failures, admin/org changes, file activity,
+  artifact publishing/sharing exposure, user activity by IP, and
+  compliance-API access auditing; API polling noise separated out.
+* Analytics dashboard shows a setup/lag notice when the selected range
+  has no analytics data; directory and agent panels hide automatically
+  when their data sources are absent.
+* Directory sync falls back to the Anthropic Admin API (users,
+  organization, workspaces) when the Compliance directory endpoints are
+  unavailable to the configured key.
+* JSON null values are no longer indexed as literal "null" strings.
+* Claude starburst app icons.
+
 1.1.0
 * Removed bundled grpc/protobuf/opentelemetry libraries (including
   platform-specific binaries) for Splunk Cloud vetting compliance.
