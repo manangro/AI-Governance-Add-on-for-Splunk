@@ -26,7 +26,7 @@
       <title>Sign-in Events</title>
       <single>
         <search>
-          <query>`claude_index` sourcetype="anthropic:compliance:activity" (event_type=user_signed_in_* OR event_type="user_signed_in" OR event_type=user_signed_out) | stats count</query>
+          <query>`claude_index` sourcetype="anthropic:compliance:activity" (event_type=user_signed_in* OR event_type="user_signed_in" OR event_type=*login* OR event_type=*logged_in* OR event_type=user_authenticated* OR event_type=*signin* OR event_type=user_signed_out OR event_type=*logout*) | stats count</query>
           <earliest>$time.earliest$</earliest>
           <latest>$time.latest$</latest>
         </search>
@@ -106,7 +106,7 @@
       <title>Sign-ins by User and IP</title>
       <table>
         <search>
-          <query>`claude_index` sourcetype="anthropic:compliance:activity" (event_type=user_signed_in_* OR event_type="user_signed_in") | `claude_actor_email` | where isnotnull(actor_email) OR isnotnull(actor_user_id) | stats count earliest(_time) AS first_seen latest(_time) AS last_seen by actor_email, actor_ip_address | convert ctime(first_seen) ctime(last_seen) | sort - count</query>
+          <query>`claude_index` sourcetype="anthropic:compliance:activity" (event_type=user_signed_in* OR event_type="user_signed_in" OR event_type=*login* OR event_type=*logged_in* OR event_type=user_authenticated* OR event_type=*signin*) | `claude_actor_email` | where (isnotnull(actor_email) AND actor_email!="null") OR (isnotnull(actor_user_id) AND actor_user_id!="null") | stats count earliest(_time) AS first_seen latest(_time) AS last_seen by actor_email, actor_ip_address | convert ctime(first_seen) ctime(last_seen) | sort - count</query>
           <earliest>$time.earliest$</earliest>
           <latest>$time.latest$</latest>
         </search>
@@ -117,7 +117,7 @@
       <title>Users Signing In from Multiple IPs</title>
       <table>
         <search>
-          <query>`claude_index` sourcetype="anthropic:compliance:activity" (event_type=user_signed_in_* OR event_type="user_signed_in") | `claude_actor_email` | where isnotnull(actor_email) | stats dc(actor_ip_address) AS distinct_ips values(actor_ip_address) AS ips by actor_email | where distinct_ips &gt; 1 | sort - distinct_ips</query>
+          <query>`claude_index` sourcetype="anthropic:compliance:activity" (event_type=user_signed_in* OR event_type="user_signed_in" OR event_type=*login* OR event_type=*logged_in* OR event_type=user_authenticated* OR event_type=*signin*) | `claude_actor_email` | where isnotnull(actor_email) AND actor_email!="null" | stats dc(actor_ip_address) AS distinct_ips values(actor_ip_address) AS ips by actor_email | where distinct_ips &gt; 1 | sort - distinct_ips</query>
           <earliest>$time.earliest$</earliest>
           <latest>$time.latest$</latest>
         </search>

@@ -45,8 +45,11 @@ def write_json_event(
     source: str,
     event_time: Optional[str] = None,
 ) -> None:
+    # Drop null values so Splunk's JSON extraction never yields literal
+    # "null" strings for fields like actor_email.
+    compact_payload = {k: v for k, v in payload.items() if v is not None}
     event = smi.Event(
-        data=json.dumps(payload, ensure_ascii=False, default=str),
+        data=json.dumps(compact_payload, ensure_ascii=False, default=str),
         index=index,
         sourcetype=sourcetype,
         source=source,

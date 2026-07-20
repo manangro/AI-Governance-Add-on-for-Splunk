@@ -22,6 +22,34 @@
       <default>*</default>
     </input>
   </fieldset>
+  <search>
+    <query>`claude_index` sourcetype="anthropic:analytics:*" | head 1 | stats count</query>
+    <earliest>-90d@d</earliest>
+    <latest>now</latest>
+    <done>
+      <condition match="$result.count$ == 0">
+        <set token="show_setup">true</set>
+      </condition>
+      <condition>
+        <unset token="show_setup"></unset>
+      </condition>
+    </done>
+  </search>
+  <row depends="$show_setup$">
+    <panel>
+      <title>Analytics data has not arrived yet</title>
+      <html>
+        <p>These panels read the <code>anthropic:analytics:*</code> sourcetypes, which come from the <b>Analytics Reports</b> input. To get data flowing:</p>
+        <ol>
+          <li>On <b>Configuration &gt; Account</b>, edit your account and add an <b>Analytics API key</b> (an Anthropic admin key with the <code>read:analytics</code> scope; spend-limit panels also need admin read access). The compliance key alone is not enough.</li>
+          <li>On <b>Inputs</b>, create an <b>Analytics Reports</b> input for that account (interval 86400 recommended).</li>
+          <li>Anthropic finalizes analytics with a ~3 day lag, so the newest data point will be about 3 days old. Widen the time range if needed.</li>
+          <li>If you ingest into a dedicated index, update the <code>claude_index</code> macro (Settings &gt; Advanced search &gt; Search macros).</li>
+        </ol>
+        <p>Errors from the input are logged in <code>index=_internal source=*ta_anthropic_claude_enterprise*</code>. This message disappears automatically once analytics events are indexed.</p>
+      </html>
+    </panel>
+  </row>
   <row>
     <panel>
       <title>Weekly Active Users</title>
