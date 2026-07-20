@@ -20,6 +20,7 @@ PRODUCT_NAMES = {
     "openai": "OpenAI Platform",
     "gemini": "Google Gemini (Workspace)",
     "microsoft": "Microsoft 365 Copilot",
+    "selfhosted": "Self-hosted / Open-source LLM",
 }
 
 

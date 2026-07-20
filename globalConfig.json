@@ -86,6 +86,10 @@
                                     {
                                         "value": "microsoft",
                                         "label": "Microsoft 365 Copilot"
+                                    },
+                                    {
+                                        "value": "selfhosted",
+                                        "label": "Self-hosted / Open-source (OpenAI-compatible, Ollama, vLLM, LiteLLM)"
                                     }
                                 ]
                             },
@@ -140,6 +144,26 @@
                                         },
                                         {
                                             "fieldId": "ms_client_secret",
+                                            "display": false,
+                                            "required": false
+                                        },
+                                        {
+                                            "fieldId": "sh_base_url",
+                                            "display": false,
+                                            "required": false
+                                        },
+                                        {
+                                            "fieldId": "sh_server_type",
+                                            "display": false,
+                                            "required": false
+                                        },
+                                        {
+                                            "fieldId": "sh_api_key",
+                                            "display": false,
+                                            "required": false
+                                        },
+                                        {
+                                            "fieldId": "sh_allow_http",
                                             "display": false,
                                             "required": false
                                         }
@@ -197,6 +221,26 @@
                                             "fieldId": "ms_client_secret",
                                             "display": false,
                                             "required": false
+                                        },
+                                        {
+                                            "fieldId": "sh_base_url",
+                                            "display": false,
+                                            "required": false
+                                        },
+                                        {
+                                            "fieldId": "sh_server_type",
+                                            "display": false,
+                                            "required": false
+                                        },
+                                        {
+                                            "fieldId": "sh_api_key",
+                                            "display": false,
+                                            "required": false
+                                        },
+                                        {
+                                            "fieldId": "sh_allow_http",
+                                            "display": false,
+                                            "required": false
                                         }
                                     ]
                                 },
@@ -250,6 +294,26 @@
                                         },
                                         {
                                             "fieldId": "ms_client_secret",
+                                            "display": false,
+                                            "required": false
+                                        },
+                                        {
+                                            "fieldId": "sh_base_url",
+                                            "display": false,
+                                            "required": false
+                                        },
+                                        {
+                                            "fieldId": "sh_server_type",
+                                            "display": false,
+                                            "required": false
+                                        },
+                                        {
+                                            "fieldId": "sh_api_key",
+                                            "display": false,
+                                            "required": false
+                                        },
+                                        {
+                                            "fieldId": "sh_allow_http",
                                             "display": false,
                                             "required": false
                                         }
@@ -307,6 +371,101 @@
                                             "fieldId": "ms_client_secret",
                                             "display": true,
                                             "required": true
+                                        },
+                                        {
+                                            "fieldId": "sh_base_url",
+                                            "display": false,
+                                            "required": false
+                                        },
+                                        {
+                                            "fieldId": "sh_server_type",
+                                            "display": false,
+                                            "required": false
+                                        },
+                                        {
+                                            "fieldId": "sh_api_key",
+                                            "display": false,
+                                            "required": false
+                                        },
+                                        {
+                                            "fieldId": "sh_allow_http",
+                                            "display": false,
+                                            "required": false
+                                        }
+                                    ]
+                                },
+                                {
+                                    "fieldValue": "selfhosted",
+                                    "fieldsToModify": [
+                                        {
+                                            "fieldId": "anthropic_admin_key",
+                                            "display": false,
+                                            "required": false
+                                        },
+                                        {
+                                            "fieldId": "anthropic_analytics_key",
+                                            "display": false,
+                                            "required": false
+                                        },
+                                        {
+                                            "fieldId": "google_client_id",
+                                            "display": false,
+                                            "required": false
+                                        },
+                                        {
+                                            "fieldId": "google_client_secret",
+                                            "display": false,
+                                            "required": false
+                                        },
+                                        {
+                                            "fieldId": "google_customer_id",
+                                            "display": false,
+                                            "required": false
+                                        },
+                                        {
+                                            "fieldId": "google_refresh_token",
+                                            "display": false,
+                                            "required": false
+                                        },
+                                        {
+                                            "fieldId": "ms_client_id",
+                                            "display": false,
+                                            "required": false
+                                        },
+                                        {
+                                            "fieldId": "ms_client_secret",
+                                            "display": false,
+                                            "required": false
+                                        },
+                                        {
+                                            "fieldId": "ms_tenant_id",
+                                            "display": false,
+                                            "required": false
+                                        },
+                                        {
+                                            "fieldId": "openai_admin_key",
+                                            "display": false,
+                                            "required": false
+                                        },
+                                        {
+                                            "fieldId": "sh_allow_http",
+                                            "display": true,
+                                            "required": false
+                                        },
+                                        {
+                                            "fieldId": "sh_api_key",
+                                            "display": true,
+                                            "required": false
+                                        },
+                                        {
+                                            "fieldId": "sh_base_url",
+                                            "display": true,
+                                            "required": true
+                                        },
+                                        {
+                                            "fieldId": "sh_server_type",
+                                            "display": true,
+                                            "required": false
                                         }
                                     ]
                                 }
@@ -388,6 +547,65 @@
                             "help": "App registration client secret.",
                             "required": false,
                             "encrypted": true
+                        },
+                        {
+                            "type": "text",
+                            "label": "Server base URL",
+                            "field": "sh_base_url",
+                            "help": "Base URL of the self-hosted LLM server, e.g. https://vllm.example.com or https://ollama.example.com:11434. HTTPS strongly recommended; HTTP requires the checkbox below.",
+                            "required": false,
+                            "validators": [
+                                {
+                                    "type": "regex",
+                                    "errorMsg": "Base URL must start with http:// or https:// and contain no spaces.",
+                                    "pattern": "^https?://\\S+$"
+                                }
+                            ]
+                        },
+                        {
+                            "type": "singleSelect",
+                            "label": "Server type",
+                            "field": "sh_server_type",
+                            "defaultValue": "openai_compatible",
+                            "required": false,
+                            "help": "Determines which endpoints are used for model inventory, runtime state and metrics.",
+                            "options": {
+                                "disableSearch": true,
+                                "autoCompleteFields": [
+                                    {
+                                        "value": "openai_compatible",
+                                        "label": "Generic OpenAI-compatible (/v1/models)"
+                                    },
+                                    {
+                                        "value": "vllm",
+                                        "label": "vLLM (/v1/models + Prometheus /metrics)"
+                                    },
+                                    {
+                                        "value": "ollama",
+                                        "label": "Ollama (/api/tags, /api/ps)"
+                                    },
+                                    {
+                                        "value": "litellm",
+                                        "label": "LiteLLM proxy (/v1/models + Prometheus /metrics)"
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "type": "text",
+                            "label": "API key / bearer token",
+                            "field": "sh_api_key",
+                            "help": "Optional. Sent as Authorization: Bearer for servers with auth enabled (vLLM --api-key, LiteLLM master key). Leave blank for open endpoints.",
+                            "required": false,
+                            "encrypted": true
+                        },
+                        {
+                            "type": "checkbox",
+                            "label": "Allow plain HTTP (lab / on-prem only)",
+                            "field": "sh_allow_http",
+                            "defaultValue": false,
+                            "required": false,
+                            "help": "Permit http:// base URLs for internal lab servers. Never enable for endpoints reached over untrusted networks; Splunk Cloud deployments should always use HTTPS."
                         },
                         {
                             "type": "text",
@@ -1171,6 +1389,121 @@
                                     }
                                 ]
                             }
+                        }
+                    ]
+                },
+                {
+                    "name": "selfhosted_monitor",
+                    "inputHelperModule": "selfhosted_monitor_helper",
+                    "title": "Self-Hosted Model Monitor",
+                    "description": "Model inventory, availability, runtime state and Prometheus metrics from self-hosted open-source LLM servers",
+                    "entity": [
+                        {
+                            "type": "text",
+                            "label": "Name",
+                            "field": "name",
+                            "required": true,
+                            "validators": [
+                                {
+                                    "type": "regex",
+                                    "errorMsg": "Input Name must begin with a letter and consist exclusively of alphanumeric characters and underscores.",
+                                    "pattern": "^[a-zA-Z]\\w*$"
+                                },
+                                {
+                                    "type": "string",
+                                    "errorMsg": "Length of input name should be between 1 and 100",
+                                    "minLength": 1,
+                                    "maxLength": 100
+                                }
+                            ]
+                        },
+                        {
+                            "type": "singleSelect",
+                            "label": "Account",
+                            "field": "account",
+                            "required": true,
+                            "options": {
+                                "referenceName": "account"
+                            },
+                            "help": "Select an account with provider Self-hosted / Open-source."
+                        },
+                        {
+                            "type": "text",
+                            "field": "interval",
+                            "label": "Interval",
+                            "required": true,
+                            "defaultValue": "300",
+                            "help": "Polling interval in seconds.",
+                            "validators": [
+                                {
+                                    "type": "regex",
+                                    "errorMsg": "Interval must be either a non-negative number, CRON interval or -1.",
+                                    "pattern": "^((?:-1|\\d+(?:\\.\\d+)?)|(([\\*\\d{1,2}\\,\\-\\/]+\\s){4}[\\*\\d{1,2}\\,\\-\\/]+))$"
+                                },
+                                {
+                                    "type": "number",
+                                    "range": [
+                                        60,
+                                        86400
+                                    ],
+                                    "errorMsg": "Interval must be between 60 and 86400"
+                                }
+                            ]
+                        },
+                        {
+                            "type": "singleSelect",
+                            "field": "index",
+                            "label": "Index",
+                            "defaultValue": "default",
+                            "options": {
+                                "endpointUrl": "data/indexes?search=isInternal=0+disabled=0",
+                                "denyList": "^_.*$",
+                                "createSearchChoice": true
+                            },
+                            "validators": [
+                                {
+                                    "type": "index_name"
+                                }
+                            ]
+                        },
+                        {
+                            "type": "checkbox",
+                            "label": "Collect model inventory",
+                            "field": "collect_models",
+                            "defaultValue": true,
+                            "required": false,
+                            "help": "Snapshot served models each cycle and emit model_added / model_removed audit events on changes."
+                        },
+                        {
+                            "type": "checkbox",
+                            "label": "Collect Prometheus metrics",
+                            "field": "collect_metrics",
+                            "defaultValue": true,
+                            "required": false,
+                            "help": "Scrape the metrics endpoint (vLLM / LiteLLM). Ignored for server types without Prometheus metrics."
+                        },
+                        {
+                            "type": "text",
+                            "label": "Metrics path",
+                            "field": "metrics_path",
+                            "defaultValue": "/metrics",
+                            "required": false
+                        },
+                        {
+                            "type": "text",
+                            "label": "Metric name prefixes",
+                            "field": "metrics_prefixes",
+                            "defaultValue": "vllm:,litellm_,ollama_",
+                            "required": false,
+                            "help": "Comma-separated prefixes of Prometheus metric families to ingest."
+                        },
+                        {
+                            "type": "checkbox",
+                            "label": "Collect runtime state (Ollama)",
+                            "field": "collect_runtime",
+                            "defaultValue": true,
+                            "required": false,
+                            "help": "For Ollama servers, also collect currently loaded/running models (/api/ps)."
                         }
                     ]
                 }

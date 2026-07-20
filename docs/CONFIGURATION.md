@@ -84,6 +84,34 @@ Two steps per provider: (A) create credentials on the vendor side,
 | **Microsoft 365 Copilot Audit** | `copilotInteraction` (extensible via `record_types`) audit records | `backfill_days`; the Graph audit query is **asynchronous** — one cycle submits a query, later cycles fetch results; keep interval ≥ 15 min |
 | **Microsoft 365 Copilot Usage** | Per-user Copilot usage report | `period` (D7/D30/D90/D180); dedupes on `reportRefreshDate` |
 
+## 5. Self-hosted / Open-source models (Ollama, vLLM, LiteLLM, OpenAI-compatible)
+
+### Server-side setup
+1. Any server exposing the OpenAI-compatible `/v1/models` endpoint works
+   out of the box (vLLM, LiteLLM proxy, llama.cpp server, TGI with the
+   OpenAI shim). Ollama is supported natively (`/api/tags`, `/api/ps`).
+2. Strongly recommended: front the server with TLS and authentication
+   (vLLM `--api-key`, LiteLLM master key, or a reverse proxy). Plain HTTP
+   is possible only behind an explicit opt-in checkbox and is intended
+   for lab networks; Splunk Cloud deployments should always use HTTPS.
+3. For metrics, ensure the Prometheus endpoint is enabled (vLLM and
+   LiteLLM expose `/metrics` by default).
+
+### Add-on setup
+- Add account → Provider: *Self-hosted / Open-source* → base URL, server
+  type (Generic OpenAI-compatible / vLLM / Ollama / LiteLLM), optional
+  bearer token, optional plain-HTTP opt-in.
+
+| Input | Collects | Key parameters |
+|---|---|---|
+| **Self-Hosted Model Monitor** | Health checks (latency, up/down), model inventory snapshots (12 h cadence) **plus immediate `model_added` / `model_removed` audit events**, Ollama loaded-model state, Prometheus request/token metrics | `collect_models`, `collect_metrics`, `metrics_path` (default `/metrics`), `metrics_prefixes` (default `vllm:,litellm_,ollama_`), `collect_runtime` |
+
+Governance tips:
+- Enable the **"AI Governance - New Self-Hosted Model Detected"** alert to
+  catch unapproved open-source model deployments.
+- Enable **"AI Governance - Self-Hosted Server Down"** for availability.
+- One account + input per server; use multiple accounts to cover a fleet.
+
 ---
 
 ## Common settings

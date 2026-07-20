@@ -5,6 +5,7 @@
     <view name="ai_governance_overview" default="true"/>
     <view name="ai_security_audit"/>
     <view name="ai_usage_cost"/>
+    <view name="ai_selfhosted"/>
     <view name="ai_compliance"/>
     <view name="search"/>
 </nav>

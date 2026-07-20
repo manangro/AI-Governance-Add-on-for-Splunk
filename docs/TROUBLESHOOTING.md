@@ -27,6 +27,9 @@
 | No events on an SHC member | Expected — inputs should run on one collection node; checkpoints are per-instance KV Store. |
 | `KV Store initialization failed` | KV Store disabled on the collection node (common on HFs with `kvstore disabled=true`). Enable KV Store or run inputs on the SH tier. |
 | Proxy errors (`Network error`) | Verify per-account Proxy URL, and that the proxy allows CONNECT to the provider hosts on 443. |
+| `Only HTTPS endpoints are supported` (self-hosted) | The account's base URL is `http://` but the "Allow plain HTTP" checkbox is off. Prefer TLS; enable the checkbox only for trusted lab networks. |
+| Self-hosted metrics empty | Server type has no Prometheus endpoint (generic/Ollama), wrong `metrics_path`, or `metrics_prefixes` doesn't match the server's metric names — check `curl <base>/metrics`. |
+| Spurious `model_removed` events | The server briefly served an empty model list (restart). Events resume as `model_added` next cycle; correlate with the health sourcetype. |
 
 ## Resetting a checkpoint (re-collect or unstick)
 

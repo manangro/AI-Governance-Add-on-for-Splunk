@@ -17,6 +17,11 @@
 | `aigov:gemini:audit` | Google | audit | `id.time` |
 | `aigov:copilot:interaction` | Microsoft | interaction/audit | `createdDateTime` |
 | `aigov:copilot:usage` | Microsoft | usage | `reportRefreshDate` |
+| `aigov:selfhosted:model` | Self-hosted | directory | snapshot time |
+| `aigov:selfhosted:audit` | Self-hosted | audit | detection time |
+| `aigov:selfhosted:metric` | Self-hosted | metrics | scrape time |
+| `aigov:selfhosted:runtime` | Self-hosted | runtime | poll time |
+| `aigov:selfhosted:health` | Self-hosted | health | check time |
 
 All events are JSON (`KV_MODE = json`), search-time extraction only.
 
@@ -64,12 +69,14 @@ All events are JSON (`KV_MODE = json`), search-time extraction only.
 | AI Governance - New AI User Seen | daily 06:00 | 30-day baseline |
 | AI Governance - Off-Hours Activity Spike | daily 07:00 | tune hours/threshold to your timezone |
 | AI Governance - Daily Spend Threshold Exceeded | daily 08:00 | default threshold 1000 — adjust |
+| AI Governance - New Self-Hosted Model Detected | */30 min | unapproved model deployments |
+| AI Governance - Self-Hosted Server Down | */15 min | availability |
 
 ## Dashboards
 
 `ai_governance_overview`, `ai_security_audit`, `ai_usage_cost`,
-`ai_compliance` (SimpleXML, dark/light aware) plus the UCC data-ingestion
-monitoring dashboard (`dashboard`).
+`ai_selfhosted`, `ai_compliance` (SimpleXML, dark/light aware) plus the
+UCC data-ingestion monitoring dashboard (`dashboard`).
 
 ## Network endpoints
 
@@ -81,6 +88,7 @@ Allow outbound HTTPS (443) from the collection node to:
 | OpenAI | `api.openai.com` |
 | Google | `oauth2.googleapis.com`, `admin.googleapis.com` |
 | Microsoft | `login.microsoftonline.com`, `graph.microsoft.com` |
+| Self-hosted | your configured base URL(s) — HTTPS recommended; plain HTTP only via explicit per-account opt-in |
 
 All clients enforce HTTPS with certificate verification, retry with
 exponential backoff, and honor `Retry-After` on HTTP 429.

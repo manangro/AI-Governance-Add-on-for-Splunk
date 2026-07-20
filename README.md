@@ -8,6 +8,7 @@ A Splunk Cloud vetted-app-compatible add-on (`TA-ai-governance`) that gives secu
 | **OpenAI** (ChatGPT Enterprise / API Platform) | Organization audit logs, user directory, aggregated token usage, daily costs | Organization Admin API key |
 | **Google Gemini** (Workspace) | Gemini audit activity via Admin SDK Reports API (`gemini_in_workspace_apps`) | OAuth 2.0 client + refresh token |
 | **Microsoft 365 Copilot** | Purview `copilotInteraction` audit records via Microsoft Graph Audit Log Query API, per-user Copilot usage reports | Entra app registration (client credentials) |
+| **Self-hosted / Open-source** (Ollama, vLLM, LiteLLM, any OpenAI-compatible server) | Model inventory + `model_added`/`model_removed` audit events, availability & latency, Ollama runtime state, Prometheus request/token metrics | Base URL (+ optional bearer token) |
 
 Built with the [Splunk UCC framework](https://splunk.github.io/addonfactory-ucc-generator/) — the standard toolchain for Splunk Cloud vetted apps. **AppInspect passes with 0 errors / 0 failures / 0 future-failures** for both the `cloud` and `splunk_appinspect` tag sets.
 
@@ -20,6 +21,7 @@ Built with the [Splunk UCC framework](https://splunk.github.io/addonfactory-ucc-
   - *AI Security Audit* — sign-ins, admin/SSO changes, API-key lifecycle, data exports, off-hours activity, shared source IPs
   - *AI Usage & Cost Monitoring* — tokens and spend by provider/model/project, Copilot per-app usage
   - *AI Compliance & Directory* — user lifecycle, role posture, inactive licensed users, shadow users
+  - *Self-Hosted & Open-Source Models* — model inventory, availability/latency, Prometheus throughput, inventory-change audit
 - **Ready-to-enable alerts** (shipped disabled): API key created/deleted, admin/SSO change, data export, new AI user, off-hours spike, daily spend threshold.
 - **Cloud & on-prem** — SHC-safe KV Store checkpointing, `python.required = 3.13` (code also runs on 3.9 for older on-prem), HTTPS-only with cert verification, optional per-account proxy.
 - **CIM hooks** — eventtypes tagged `authentication`, `change`, `audit`.
@@ -84,11 +86,18 @@ splunk-appinspect inspect dist/TA-ai-governance-1.0.0.tar.gz --included-tags clo
 2. Add an account with provider *Microsoft 365 Copilot*, then create **Microsoft 365 Copilot Audit** and/or **Usage** inputs. Audit queries are asynchronous on Microsoft's side — the input submits a query one cycle and retrieves results on subsequent cycles.
 </details>
 
+<details>
+<summary><b>Self-hosted / Open-source models (Ollama, vLLM, LiteLLM, OpenAI-compatible)</b></summary>
+
+1. Add an account with provider *Self-hosted / Open-source*: base URL (e.g. `https://vllm.example.com` or `https://ollama.internal:11434`), server type, and an optional bearer token (vLLM `--api-key`, LiteLLM master key). Plain HTTP is available behind an explicit opt-in for lab servers.
+2. Create a **Self-Hosted Model Monitor** input. Each cycle it health-checks the server, snapshots the model inventory (emitting `model_added`/`model_removed` audit events on changes — your unapproved-model detector), collects Ollama runtime state, and scrapes Prometheus metrics (vLLM/LiteLLM) filtered by configurable prefixes.
+</details>
+
 After creating inputs, point the `aigov_index` macro (Settings → Advanced search → Search macros) at the index you chose.
 
 ## Sourcetypes
 
-`aigov:anthropic:activity|user|group|usage|cost|summary`, `aigov:openai:audit|user|usage|cost`, `aigov:gemini:audit`, `aigov:copilot:interaction|usage`
+`aigov:anthropic:activity|user|group|usage|cost|summary`, `aigov:openai:audit|user|usage|cost`, `aigov:gemini:audit`, `aigov:copilot:interaction|usage`, `aigov:selfhosted:model|audit|metric|runtime|health`
 
 ## License
 

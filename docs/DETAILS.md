@@ -19,6 +19,7 @@ dashboards and alerts for AI governance out of the box.
 | **OpenAI** (ChatGPT Enterprise & API Platform) | Organization audit logs, user directory, aggregated token usage, daily costs | 5 min / 12 h / 24 h |
 | **Google Gemini** (Workspace) | Gemini audit activity from the Admin SDK Reports API (`gemini_in_workspace_apps`, extensible) | 10 min |
 | **Microsoft 365 Copilot** | Purview `copilotInteraction` audit records via the Microsoft Graph Audit Log Query API; per-user Copilot usage reports | 15 min / 24 h |
+| **Self-hosted / Open-source LLMs** (Ollama, vLLM, LiteLLM, any OpenAI-compatible server) | Model inventory with `model_added`/`model_removed` audit events, availability & latency, Ollama runtime state, Prometheus request/token metrics | 5 min |
 
 Every event carries normalized fields — `aigov_provider`, `aigov_product`,
 `aigov_category` (audit / directory / usage / cost / interaction),
@@ -27,14 +28,17 @@ vendors.
 
 ## What's included
 
-- **4 dashboards**: AI Governance Overview · AI Security Audit (sign-ins,
+- **5 dashboards**: AI Governance Overview · AI Security Audit (sign-ins,
   admin/SSO changes, API-key lifecycle, data exports, off-hours activity,
-  shared source IPs) · AI Usage & Cost Monitoring · AI Compliance &
-  Directory (user lifecycle, inactive licensed users, shadow users)
-- **6 alerts** (shipped disabled, ready to enable): API key created/deleted,
+  shared source IPs) · AI Usage & Cost Monitoring · Self-Hosted &
+  Open-Source Models (inventory, availability, throughput, change audit)
+  · AI Compliance & Directory (user lifecycle, inactive licensed users,
+  shadow users)
+- **8 alerts** (shipped disabled, ready to enable): API key created/deleted,
   admin or SSO configuration change, data export activity, new AI user
-  seen, off-hours activity spike, daily spend threshold exceeded
-- **13 sourcetypes**, eventtypes tagged for CIM (`authentication`,
+  seen, off-hours activity spike, daily spend threshold exceeded, new
+  self-hosted model detected, self-hosted server down
+- **18 sourcetypes**, eventtypes tagged for CIM (`authentication`,
   `change`, `audit`), and search macros for easy customization
 - **Guided setup UI** (UCC): add provider accounts with encrypted
   credential storage, then enable inputs per data type

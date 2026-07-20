@@ -11,6 +11,7 @@ PROVIDER_ANTHROPIC = "anthropic"
 PROVIDER_OPENAI = "openai"
 PROVIDER_GEMINI = "gemini"
 PROVIDER_MICROSOFT = "microsoft"
+PROVIDER_SELFHOSTED = "selfhosted"
 
 # Sourcetypes
 ST_ANTHROPIC_ACTIVITY = "aigov:anthropic:activity"
@@ -29,6 +30,12 @@ ST_GEMINI_AUDIT = "aigov:gemini:audit"
 
 ST_COPILOT_INTERACTION = "aigov:copilot:interaction"
 ST_COPILOT_USAGE = "aigov:copilot:usage"
+
+ST_SELFHOSTED_MODEL = "aigov:selfhosted:model"
+ST_SELFHOSTED_AUDIT = "aigov:selfhosted:audit"
+ST_SELFHOSTED_METRIC = "aigov:selfhosted:metric"
+ST_SELFHOSTED_RUNTIME = "aigov:selfhosted:runtime"
+ST_SELFHOSTED_HEALTH = "aigov:selfhosted:health"
 
 # API base URLs (HTTPS only)
 ANTHROPIC_API_BASE = "https://api.anthropic.com"

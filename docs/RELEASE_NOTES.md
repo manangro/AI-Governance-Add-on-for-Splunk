@@ -26,6 +26,10 @@
   - `gemini_audit` — Workspace Admin SDK Reports (Gemini applications)
   - `copilot_audit` — Purview `copilotInteraction` records via Graph Audit Log Query API (async submit/poll/fetch)
   - `copilot_usage` — Microsoft 365 Copilot per-user usage reports
+  - `selfhosted_monitor` — self-hosted / open-source LLM servers (Ollama,
+    vLLM, LiteLLM, any OpenAI-compatible endpoint): health checks, model
+    inventory with `model_added`/`model_removed` audit events, Ollama
+    runtime state, Prometheus metrics
 - Cross-provider normalized field model (`aigov_*`) on every event.
 - Dashboards: AI Governance Overview, AI Security Audit, AI Usage & Cost
   Monitoring, AI Compliance & Directory.

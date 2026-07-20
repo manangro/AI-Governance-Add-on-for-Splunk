@@ -20,6 +20,10 @@ _ACCOUNT_FIELDS = (
     "ms_tenant_id",
     "ms_client_id",
     "ms_client_secret",
+    "sh_base_url",
+    "sh_server_type",
+    "sh_api_key",
+    "sh_allow_http",
     "proxy_url",
 )
 

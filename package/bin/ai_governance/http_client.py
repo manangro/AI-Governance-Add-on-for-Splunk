@@ -35,8 +35,9 @@ class APIError(Exception):
 class JsonHttpClient:
     """HTTPS client for provider REST APIs."""
 
-    def __init__(self, proxy_url=None, timeout=DEFAULT_TIMEOUT):
+    def __init__(self, proxy_url=None, timeout=DEFAULT_TIMEOUT, allow_http=False):
         self.timeout = timeout
+        self.allow_http = allow_http
         self._proxy_handler = None
         if proxy_url:
             self._proxy_handler = urllib.request.ProxyHandler(
@@ -56,8 +57,10 @@ class JsonHttpClient:
         params: Optional[Dict[str, Any]] = None,
         json_body: Optional[Dict[str, Any]] = None,
         form_body: Optional[Dict[str, str]] = None,
-    ) -> Dict[str, Any]:
-        """Perform an HTTPS request and return the parsed JSON body.
+        raw_text: bool = False,
+    ) -> Any:
+        """Perform an HTTPS request and return the parsed JSON body
+        (or the raw text body when ``raw_text`` is set).
 
         Retries on 429 (honouring Retry-After), 5xx and transient network
         errors with exponential backoff.
@@ -68,8 +71,12 @@ class JsonHttpClient:
                 sep = "&" if "?" in url else "?"
                 url = url + sep + urllib.parse.urlencode(filtered, doseq=True)
 
-        if not url.lower().startswith("https://"):
-            raise APIError(0, "Only HTTPS endpoints are supported")
+        lowered = url.lower()
+        if not lowered.startswith("https://"):
+            # Plain HTTP is only permitted when the account explicitly
+            # opts in (self-hosted lab servers on trusted networks).
+            if not (self.allow_http and lowered.startswith("http://")):
+                raise APIError(0, "Only HTTPS endpoints are supported")
 
         all_headers = {
             "Accept": "application/json",
@@ -96,6 +103,8 @@ class JsonHttpClient:
             try:
                 with opener.open(request, timeout=self.timeout) as response:
                     body = response.read().decode("utf-8")
+                    if raw_text:
+                        return body
                     if not body:
                         return {}
                     return json.loads(body)
@@ -132,6 +141,11 @@ class JsonHttpClient:
 
     def get_json(self, url, headers=None, params=None):
         return self.request_json("GET", url, headers=headers, params=params)
+
+    def get_text(self, url, headers=None, params=None):
+        return self.request_json(
+            "GET", url, headers=headers, params=params, raw_text=True
+        )
 
     def post_json(self, url, headers=None, json_body=None):
         return self.request_json("POST", url, headers=headers, json_body=json_body)

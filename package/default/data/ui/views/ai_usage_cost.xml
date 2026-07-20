@@ -15,6 +15,7 @@
       <choice value="anthropic">Anthropic</choice>
       <choice value="openai">OpenAI</choice>
       <choice value="microsoft">Microsoft Copilot</choice>
+      <choice value="selfhosted">Self-hosted / Open-source</choice>
       <default>*</default>
       <prefix>aigov_provider IN (</prefix>
       <suffix>)</suffix>
