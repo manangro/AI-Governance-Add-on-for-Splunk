@@ -98,7 +98,7 @@ After creating inputs, point the `aigov_index` macro (Settings → Advanced sear
 
 ## Sourcetypes
 
-`aigov:anthropic:activity|user|group|usage|cost|summary`, `aigov:openai:audit|user|usage|cost`, `aigov:gemini:audit`, `aigov:copilot:interaction|usage`, `aigov:selfhosted:model|audit|metric|runtime|health`
+`anthropic:compliance:activity|user|group` and `anthropic:analytics:usage|cost|summary` (same names as the Anthropic Claude Enterprise Add-on — one shared taxonomy), `aigov:openai:audit|user|usage|cost`, `aigov:gemini:audit`, `aigov:copilot:interaction|usage`, `aigov:selfhosted:model|audit|metric|runtime|health`
 
 ## License
 

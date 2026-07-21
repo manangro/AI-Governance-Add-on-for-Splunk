@@ -49,11 +49,14 @@ account proxy URL is supported.
 
 SOURCETYPES
 -----------
-aigov:anthropic:activity, aigov:anthropic:user, aigov:anthropic:group,
-aigov:anthropic:usage, aigov:anthropic:cost, aigov:anthropic:summary,
-aigov:openai:audit, aigov:openai:user, aigov:openai:usage,
-aigov:openai:cost, aigov:gemini:audit, aigov:copilot:interaction,
-aigov:copilot:usage
+anthropic:compliance:activity, anthropic:compliance:user,
+anthropic:compliance:group, anthropic:analytics:usage,
+anthropic:analytics:cost, anthropic:analytics:summary (shared with the
+Anthropic Claude Enterprise Add-on), aigov:openai:audit, aigov:openai:user,
+aigov:openai:usage, aigov:openai:cost, aigov:gemini:audit,
+aigov:copilot:interaction, aigov:copilot:usage, aigov:selfhosted:model,
+aigov:selfhosted:audit, aigov:selfhosted:metric, aigov:selfhosted:runtime,
+aigov:selfhosted:health
 
 Every event carries normalized fields: aigov_provider, aigov_product,
 aigov_category, aigov_action, aigov_user, aigov_src_ip.

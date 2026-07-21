@@ -14,12 +14,15 @@ PROVIDER_MICROSOFT = "microsoft"
 PROVIDER_SELFHOSTED = "selfhosted"
 
 # Sourcetypes
-ST_ANTHROPIC_ACTIVITY = "aigov:anthropic:activity"
-ST_ANTHROPIC_USER = "aigov:anthropic:user"
-ST_ANTHROPIC_GROUP = "aigov:anthropic:group"
-ST_ANTHROPIC_USAGE = "aigov:anthropic:usage"
-ST_ANTHROPIC_COST = "aigov:anthropic:cost"
-ST_ANTHROPIC_SUMMARY = "aigov:anthropic:summary"
+# Anthropic events use the same sourcetype names as the Anthropic Claude
+# Enterprise Add-on (TA-anthropic_claude_enterprise) so both apps share one
+# taxonomy and existing data works unchanged.
+ST_ANTHROPIC_ACTIVITY = "anthropic:compliance:activity"
+ST_ANTHROPIC_USER = "anthropic:compliance:user"
+ST_ANTHROPIC_GROUP = "anthropic:compliance:group"
+ST_ANTHROPIC_USAGE = "anthropic:analytics:usage"
+ST_ANTHROPIC_COST = "anthropic:analytics:cost"
+ST_ANTHROPIC_SUMMARY = "anthropic:analytics:summary"
 
 ST_OPENAI_AUDIT = "aigov:openai:audit"
 ST_OPENAI_USER = "aigov:openai:user"

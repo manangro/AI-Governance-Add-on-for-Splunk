@@ -138,7 +138,7 @@
       <table>
         <title>Anthropic Adoption Summary (latest)</title>
         <search>
-          <query>`aigov_index` sourcetype IN ("aigov:anthropic:summary","anthropic:analytics:summary") | head 7 | table _time daily_active_user_count weekly_active_user_count daily_adoption_rate monthly_adoption_rate</query>
+          <query>`aigov_index` sourcetype="anthropic:analytics:summary" | head 7 | table _time daily_active_user_count weekly_active_user_count daily_adoption_rate monthly_adoption_rate</query>
           <earliest>$time_range.earliest$</earliest>
           <latest>$time_range.latest$</latest>
         </search>

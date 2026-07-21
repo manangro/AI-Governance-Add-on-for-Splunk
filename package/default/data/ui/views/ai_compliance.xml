@@ -15,7 +15,7 @@
       <single>
         <title>Anthropic Provisioned Users</title>
         <search>
-          <query>`aigov_index` sourcetype IN ("aigov:anthropic:user","anthropic:compliance:user") | dedup id | stats count</query>
+          <query>`aigov_index` sourcetype="anthropic:compliance:user" | dedup id | stats count</query>
           <earliest>$time_range.earliest$</earliest>
           <latest>$time_range.latest$</latest>
         </search>
@@ -77,7 +77,7 @@
       <table>
         <title>Anthropic Users by Role (latest snapshot)</title>
         <search>
-          <query>`aigov_index` sourcetype IN ("aigov:anthropic:user","anthropic:compliance:user") | dedup id | stats count by role | sort - count</query>
+          <query>`aigov_index` sourcetype="anthropic:compliance:user" | dedup id | stats count by role | sort - count</query>
           <earliest>$time_range.earliest$</earliest>
           <latest>$time_range.latest$</latest>
         </search>

@@ -4,12 +4,12 @@
 
 | Sourcetype | Provider | Category | Event time source |
 |---|---|---|---|
-| `aigov:anthropic:activity` | Anthropic | audit | `created_at` |
-| `aigov:anthropic:user` | Anthropic | directory | snapshot time |
-| `aigov:anthropic:group` | Anthropic | directory | snapshot time |
-| `aigov:anthropic:usage` | Anthropic | usage | report date |
-| `aigov:anthropic:cost` | Anthropic | cost | report date |
-| `aigov:anthropic:summary` | Anthropic | summary | report date |
+| `anthropic:compliance:activity` | Anthropic | audit | `created_at` |
+| `anthropic:compliance:user` | Anthropic | directory | snapshot time |
+| `anthropic:compliance:group` | Anthropic | directory | snapshot time |
+| `anthropic:analytics:usage` | Anthropic | usage | report date |
+| `anthropic:analytics:cost` | Anthropic | cost | report date |
+| `anthropic:analytics:summary` | Anthropic | summary | report date |
 | `aigov:openai:audit` | OpenAI | audit | `effective_at` |
 | `aigov:openai:user` | OpenAI | directory | snapshot time |
 | `aigov:openai:usage` | OpenAI | usage | bucket start |
@@ -25,15 +25,18 @@
 
 All events are JSON (`KV_MODE = json`), search-time extraction only.
 
-### Legacy interoperability
+### Anthropic sourcetype sharing
 
-Events already collected by the **Anthropic Claude Enterprise Add-on**
-(`anthropic:compliance:activity|user|group|organization|chat_content|file_metadata`,
-`anthropic:analytics:summary|usage|cost|user_usage|user_cost|user_activity|spend_limit|spend_limit_request`)
-are automatically projected into the `aigov_*` field model via search-time
-`EVAL` props and are included in the `aigov_all` / `aigov_audit` /
-`aigov_directory` / `aigov_usage` / `aigov_cost` macros. Dashboards and
-alerts therefore work on that data without re-ingestion.
+The Anthropic sourcetypes are **the same names used by the Anthropic
+Claude Enterprise Add-on** (`TA-anthropic_claude_enterprise`) — this app
+does not invent a parallel `aigov:anthropic:*` family. Whether the data
+was collected by this app's inputs or by that add-on, it lands in
+`anthropic:compliance:*` / `anthropic:analytics:*` and the `aigov_*`
+fields are computed at search time (also for the additional sourcetypes
+that add-on emits: `organization`, `chat_content`, `file_metadata`,
+`user_usage`, `user_cost`, `user_activity`, `spend_limit`,
+`spend_limit_request`). Dashboards and alerts work on existing data
+without re-ingestion.
 
 ## Normalized fields (present on every event)
 

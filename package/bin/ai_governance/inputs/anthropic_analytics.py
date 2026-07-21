@@ -86,7 +86,7 @@ def _collect(logger, session_key, input_key, input_item, event_writer) -> int:
                     payload=payload,
                     index=index,
                     sourcetype=sourcetype,
-                    source="aigov:anthropic:analytics:%s" % account_name,
+                    source="anthropic:analytics:%s" % account_name,
                     event_time="%sT00:00:00Z" % event_date
                     if len(str(event_date)) == 10
                     else event_date,
