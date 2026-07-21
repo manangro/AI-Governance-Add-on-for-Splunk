@@ -46,7 +46,7 @@
           <li>Anthropic finalizes analytics with a ~3 day lag, so the newest data point will be about 3 days old. Widen the time range if needed.</li>
           <li>If you ingest into a dedicated index, update the <code>claude_index</code> macro (Settings &gt; Advanced search &gt; Search macros).</li>
         </ol>
-        <p>Errors from the input are logged in <code>index=_internal source=*ta_anthropic_claude_enterprise*</code>. This message disappears automatically once analytics events are indexed.</p>
+        <p>Errors from the input are logged in <code>index=_internal source=*anthropic_claude*</code>. This message disappears automatically once analytics events are indexed.</p>
       </html>
     </panel>
   </row>

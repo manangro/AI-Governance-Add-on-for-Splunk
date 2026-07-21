@@ -125,7 +125,7 @@ and schedule.
 
 TROUBLESHOOTING
 ---------------
-* Add-on logs: index=_internal source=*ta_anthropic_claude_enterprise*
+* Add-on logs: index=_internal source=*anthropic_claude*
 * Blank analytics panels: the Analytics API finalizes data with about a
   3-day lag; make sure the Analytics Reports input has run and that the
   claude_index macro matches your index.
