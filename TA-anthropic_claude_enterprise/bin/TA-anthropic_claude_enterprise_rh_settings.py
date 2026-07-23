@@ -1,5 +1,5 @@
 
-import import_declare_test
+import import_declare_test  # noqa: F401  # adds lib/ to sys.path
 
 from splunktaucclib.rest_handler.endpoint import (
     field,
@@ -21,7 +21,7 @@ fields_logging = [
         encrypted=False,
         default='INFO',
         validator=validator.Pattern(
-            regex=r"""^DEBUG|INFO|WARNING|ERROR|CRITICAL$""", 
+            regex=r"""^DEBUG|INFO|WARNING|ERROR|CRITICAL$""",
         )
     )
 ]

@@ -1,4 +1,4 @@
-import import_declare_test
+import import_declare_test  # noqa: F401  # adds lib/ to sys.path
 import sys
 
 from splunklib import modularinput as smi

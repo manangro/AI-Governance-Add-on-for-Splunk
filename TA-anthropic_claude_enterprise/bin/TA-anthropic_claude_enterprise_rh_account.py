@@ -1,5 +1,5 @@
 
-import import_declare_test
+import import_declare_test  # noqa: F401  # adds lib/ to sys.path
 
 from splunktaucclib.rest_handler.endpoint import (
     field,
@@ -23,11 +23,11 @@ special_fields = [
         default=None,
         validator=validator.AllOf(
             validator.Pattern(
-                regex=r"""^[a-zA-Z]\w*$""", 
-            ), 
+                regex=r"""^[a-zA-Z]\w*$""",
+            ),
             validator.String(
-                max_len=100, 
-                min_len=1, 
+                max_len=100,
+                min_len=1,
             )
         )
     )
@@ -40,21 +40,21 @@ fields = [
         encrypted=True,
         default=None,
         validator=None
-    ), 
+    ),
     field.RestField(
         'compliance_key_type',
         required=True,
         encrypted=False,
         default='compliance_full',
         validator=None
-    ), 
+    ),
     field.RestField(
         'analytics_api_key',
         required=False,
         encrypted=True,
         default=None,
         validator=None
-    ), 
+    ),
     field.RestField(
         'proxy_url',
         required=False,

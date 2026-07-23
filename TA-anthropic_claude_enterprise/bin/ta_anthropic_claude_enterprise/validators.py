@@ -5,11 +5,11 @@ from __future__ import annotations
 import sys
 import xml.etree.ElementTree as ET
 
-import import_declare_test
+import import_declare_test  # noqa: F401  # adds lib/ to sys.path
 from splunklib import modularinput as smi
 
 from ta_anthropic_claude_enterprise.account import get_account_config, resolve_analytics_api_key
-from ta_anthropic_claude_enterprise.api.client import AnthropicClient, AnthropicAPIError
+from ta_anthropic_claude_enterprise.api.client import AnthropicClient
 
 
 def validate_account_credentials(session_key: str, account_name: str) -> None:

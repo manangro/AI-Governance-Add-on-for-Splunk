@@ -1,5 +1,5 @@
 
-import import_declare_test
+import import_declare_test  # noqa: F401  # adds lib/ to sys.path
 
 from splunktaucclib.rest_handler.endpoint import (
     field,
@@ -22,11 +22,11 @@ special_fields = [
         default=None,
         validator=validator.AllOf(
             validator.Pattern(
-                regex=r"""^[a-zA-Z]\w*$""", 
-            ), 
+                regex=r"""^[a-zA-Z]\w*$""",
+            ),
             validator.String(
-                max_len=100, 
-                min_len=1, 
+                max_len=100,
+                min_len=1,
             )
         )
     )
@@ -40,70 +40,70 @@ fields = [
         default='86400',
         validator=validator.AllOf(
             validator.Pattern(
-                regex=r"""^((?:-1|\d+(?:\.\d+)?)|(([\*\d{1,2}\,\-\/]+\s){4}[\*\d{1,2}\,\-\/]+))$""", 
-            ), 
+                regex=r"""^((?:-1|\d+(?:\.\d+)?)|(([\*\d{1,2}\,\-\/]+\s){4}[\*\d{1,2}\,\-\/]+))$""",
+            ),
             validator.Number(
-                max_val=604800, 
-                min_val=300, 
+                max_val=604800,
+                min_val=300,
             )
         )
-    ), 
+    ),
     field.RestField(
         'index',
         required=False,
         encrypted=False,
         default='default',
         validator=validator.IndexName()
-    ), 
+    ),
     field.RestField(
         'account',
         required=True,
         encrypted=False,
         default=None,
         validator=None
-    ), 
+    ),
     field.RestField(
         'collection_mode',
         required=True,
         encrypted=False,
         default='chat_id',
         validator=None
-    ), 
+    ),
     field.RestField(
         'target_user_email',
         required=False,
         encrypted=False,
         default=None,
         validator=None
-    ), 
+    ),
     field.RestField(
         'target_chat_id',
         required=False,
         encrypted=False,
         default=None,
         validator=None
-    ), 
+    ),
     field.RestField(
         'target_file_id',
         required=False,
         encrypted=False,
         default=None,
         validator=None
-    ), 
+    ),
     field.RestField(
         'include_messages',
         required=False,
         encrypted=False,
         default=False,
         validator=None
-    ), 
+    ),
     field.RestField(
         'max_chats',
         required=False,
         encrypted=False,
         default='10',
         validator=None
-    ), 
+    ),
 
     field.RestField(
         'disabled',

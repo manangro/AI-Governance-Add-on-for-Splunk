@@ -1,5 +1,5 @@
 
-import import_declare_test
+import import_declare_test  # noqa: F401  # adds lib/ to sys.path
 
 from splunktaucclib.rest_handler.endpoint import (
     field,
@@ -22,11 +22,11 @@ special_fields = [
         default=None,
         validator=validator.AllOf(
             validator.Pattern(
-                regex=r"""^[a-zA-Z]\w*$""", 
-            ), 
+                regex=r"""^[a-zA-Z]\w*$""",
+            ),
             validator.String(
-                max_len=100, 
-                min_len=1, 
+                max_len=100,
+                min_len=1,
             )
         )
     )
@@ -40,42 +40,42 @@ fields = [
         default='60',
         validator=validator.AllOf(
             validator.Pattern(
-                regex=r"""^((?:-1|\d+(?:\.\d+)?)|(([\*\d{1,2}\,\-\/]+\s){4}[\*\d{1,2}\,\-\/]+))$""", 
-            ), 
+                regex=r"""^((?:-1|\d+(?:\.\d+)?)|(([\*\d{1,2}\,\-\/]+\s){4}[\*\d{1,2}\,\-\/]+))$""",
+            ),
             validator.Number(
-                max_val=86400, 
-                min_val=30, 
+                max_val=86400,
+                min_val=30,
             )
         )
-    ), 
+    ),
     field.RestField(
         'index',
         required=False,
         encrypted=False,
         default='default',
         validator=validator.IndexName()
-    ), 
+    ),
     field.RestField(
         'account',
         required=True,
         encrypted=False,
         default=None,
         validator=None
-    ), 
+    ),
     field.RestField(
         'backfill_days',
         required=False,
         encrypted=False,
         default='7',
         validator=None
-    ), 
+    ),
     field.RestField(
         'max_events_per_cycle',
         required=False,
         encrypted=False,
         default='1000',
         validator=None
-    ), 
+    ),
 
     field.RestField(
         'disabled',

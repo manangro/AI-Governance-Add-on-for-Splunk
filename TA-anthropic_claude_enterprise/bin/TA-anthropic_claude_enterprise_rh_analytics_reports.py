@@ -1,5 +1,5 @@
 
-import import_declare_test
+import import_declare_test  # noqa: F401  # adds lib/ to sys.path
 
 from splunktaucclib.rest_handler.endpoint import (
     field,
@@ -22,11 +22,11 @@ special_fields = [
         default=None,
         validator=validator.AllOf(
             validator.Pattern(
-                regex=r"""^[a-zA-Z]\w*$""", 
-            ), 
+                regex=r"""^[a-zA-Z]\w*$""",
+            ),
             validator.String(
-                max_len=100, 
-                min_len=1, 
+                max_len=100,
+                min_len=1,
             )
         )
     )
@@ -40,91 +40,91 @@ fields = [
         default='86400',
         validator=validator.AllOf(
             validator.Pattern(
-                regex=r"""^((?:-1|\d+(?:\.\d+)?)|(([\*\d{1,2}\,\-\/]+\s){4}[\*\d{1,2}\,\-\/]+))$""", 
-            ), 
+                regex=r"""^((?:-1|\d+(?:\.\d+)?)|(([\*\d{1,2}\,\-\/]+\s){4}[\*\d{1,2}\,\-\/]+))$""",
+            ),
             validator.Number(
-                max_val=604800, 
-                min_val=3600, 
+                max_val=604800,
+                min_val=3600,
             )
         )
-    ), 
+    ),
     field.RestField(
         'index',
         required=False,
         encrypted=False,
         default='default',
         validator=validator.IndexName()
-    ), 
+    ),
     field.RestField(
         'account',
         required=True,
         encrypted=False,
         default=None,
         validator=None
-    ), 
+    ),
     field.RestField(
         'bucket_width',
         required=False,
         encrypted=False,
         default='1d',
         validator=None
-    ), 
+    ),
     field.RestField(
         'collect_summaries',
         required=False,
         encrypted=False,
         default=True,
         validator=None
-    ), 
+    ),
     field.RestField(
         'collect_usage',
         required=False,
         encrypted=False,
         default=True,
         validator=None
-    ), 
+    ),
     field.RestField(
         'collect_cost',
         required=False,
         encrypted=False,
         default=True,
         validator=None
-    ), 
+    ),
     field.RestField(
         'collect_user_usage',
         required=False,
         encrypted=False,
         default=True,
         validator=None
-    ), 
+    ),
     field.RestField(
         'collect_user_cost',
         required=False,
         encrypted=False,
         default=True,
         validator=None
-    ), 
+    ),
     field.RestField(
         'collect_user_activity',
         required=False,
         encrypted=False,
         default=True,
         validator=None
-    ), 
+    ),
     field.RestField(
         'collect_spend_limits',
         required=False,
         encrypted=False,
         default=True,
         validator=None
-    ), 
+    ),
     field.RestField(
         'backfill_days',
         required=False,
         encrypted=False,
         default='7',
         validator=None
-    ), 
+    ),
 
     field.RestField(
         'disabled',
