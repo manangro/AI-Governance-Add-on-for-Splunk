@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import date, timedelta
 from typing import Any, Dict, Iterator, List, Optional
 
-from ta_anthropic_claude_enterprise.api.client import AnthropicClient
+from ta_anthropic_claude_enterprise.api.client import AnthropicAPIError, AnthropicClient
 
 
 class AnalyticsAPI:
@@ -33,6 +33,26 @@ class AnalyticsAPI:
             },
         )
 
+    def _paginate_grouped(
+        self,
+        path: str,
+        params: Dict[str, Any],
+        group_by: Optional[List[str]],
+    ) -> Iterator[Dict[str, Any]]:
+        """Paginate a report, requesting group_by via the API's array-param
+        convention (group_by[]); if the API rejects the grouping with a 400,
+        retry ungrouped rather than failing the whole collection."""
+        if group_by:
+            grouped = dict(params)
+            grouped["group_by[]"] = group_by
+            try:
+                yield from self._client.paginate_analytics(path, grouped)
+                return
+            except AnthropicAPIError as exc:
+                if exc.status_code != 400:
+                    raise
+        yield from self._client.paginate_analytics(path, params)
+
     def get_usage_report(
         self,
         starting_at: str,
@@ -46,9 +66,9 @@ class AnalyticsAPI:
         }
         if ending_at:
             params["ending_at"] = ending_at
-        if group_by:
-            params["group_by"] = group_by
-        return self._client.paginate_analytics("/v1/organizations/analytics/usage_report", params)
+        return self._paginate_grouped(
+            "/v1/organizations/analytics/usage_report", params, group_by
+        )
 
     def get_cost_report(
         self,
@@ -63,9 +83,9 @@ class AnalyticsAPI:
         }
         if ending_at:
             params["ending_at"] = ending_at
-        if group_by:
-            params["group_by"] = group_by
-        return self._client.paginate_analytics("/v1/organizations/analytics/cost_report", params)
+        return self._paginate_grouped(
+            "/v1/organizations/analytics/cost_report", params, group_by
+        )
 
     def get_user_usage_report(
         self,

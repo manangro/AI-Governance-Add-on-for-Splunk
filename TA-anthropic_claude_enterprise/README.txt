@@ -1,7 +1,7 @@
 Anthropic Claude Enterprise Add-on for Splunk
 ==============================================
 
-Version: 1.2.3
+Version: 1.2.4
 Author: Manan Grover
 License: Apache-2.0
 
@@ -145,6 +145,14 @@ encrypted and are never written to logs.
 
 RELEASE NOTES
 -------------
+1.2.4
+* Usage/cost reports now request grouping with the API's array-parameter
+  convention (group_by[]), so product and model dimensions populate; a
+  400 response falls back to ungrouped collection instead of failing.
+* Cost formulas prefer recomputing USD from the raw cents amount over
+  ingest-time totals, correcting historical per-user cost events that
+  were stored with inflated values.
+
 1.2.3
 * Money correctness: all Anthropic API amounts (cost, user cost, spend
   limits, limit requests) are cents expressed as decimal strings and are
