@@ -1,7 +1,7 @@
 Anthropic Claude Enterprise Add-on for Splunk
 ==============================================
 
-Version: 1.2.2
+Version: 1.2.3
 Author: Manan Grover
 License: Apache-2.0
 
@@ -145,6 +145,17 @@ encrypted and are never written to logs.
 
 RELEASE NOTES
 -------------
+1.2.3
+* Money correctness: all Anthropic API amounts (cost, user cost, spend
+  limits, limit requests) are cents expressed as decimal strings and are
+  now always divided by 100; the previous decimal-point heuristic
+  inflated USD values 100x.
+* Usage/cost report buckets that wrap rows in a results[] array are now
+  flattened into one event per row with bucket fields merged in, so
+  product/model/amount/requests are flat searchable fields.
+* Spend-limit dashboards and saved searches recompute USD from the raw
+  cents fields at search time, correcting previously indexed snapshots.
+
 1.2.2
 * Lint-clean Python across bin/ (ruff, trailing whitespace) with the
   import_declare_test sys.path bootstraps preserved.

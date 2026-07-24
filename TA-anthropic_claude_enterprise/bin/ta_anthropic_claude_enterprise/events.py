@@ -177,14 +177,16 @@ def _apply_cents_to_usd(record: Dict[str, Any], cents_field: str, usd_field: str
 
 
 def _money_to_usd(raw: Any) -> Optional[float]:
-    """Convert API money strings to USD (cents or decimal dollars)."""
+    """Convert API money amounts to USD.
+
+    Anthropic Analytics/Admin API amounts are cents expressed as decimal
+    strings (e.g. "50009.883" cents == 500.09883 USD), so always divide
+    by 100. Never guess dollars from the presence of a decimal point.
+    """
     if raw in (None, ""):
         return None
     try:
         value = float(raw)
     except (TypeError, ValueError):
         return None
-    raw_str = str(raw).strip()
-    if "." in raw_str and value < 100000:
-        return value
-    return value / 100.0
+    return round(value / 100.0, 6)

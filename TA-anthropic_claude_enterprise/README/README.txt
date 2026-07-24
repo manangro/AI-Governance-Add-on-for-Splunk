@@ -1,4 +1,4 @@
-Anthropic Claude Enterprise Add-on for Splunk v1.2.2
+Anthropic Claude Enterprise Add-on for Splunk v1.2.3
 
 Created by Manan Grover.
 

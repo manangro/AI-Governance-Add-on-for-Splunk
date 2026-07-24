@@ -228,6 +228,27 @@ def _emit_summaries(
     return count
 
 
+def _iter_flattened(records) -> "Any":
+    """Flatten report buckets that wrap rows in a results[] array.
+
+    The usage/cost report API returns one bucket per time window with the
+    actual rows inside `results`. Emit one event per row, carrying the
+    bucket-level fields (starting_at, ending_at, ...) onto each row so
+    Splunk sees flat, searchable fields instead of results{}.* multivalues.
+    """
+    for record in records:
+        results = record.get("results") if isinstance(record, dict) else None
+        if not isinstance(results, list):
+            yield record
+            continue
+        base = {k: v for k, v in record.items() if k != "results"}
+        for result in results:
+            if isinstance(result, dict):
+                merged = dict(base)
+                merged.update(result)
+                yield merged
+
+
 def _emit_paginated_report(
     iterator,
     report_type: str,
@@ -237,7 +258,7 @@ def _emit_paginated_report(
     source: str,
 ) -> int:
     count = 0
-    for record in iterator:
+    for record in _iter_flattened(iterator):
         payload = wrap_analytics_record(record, report_type)
         write_json_event(
             event_writer=event_writer,
@@ -260,7 +281,7 @@ def _emit_list_report(
     source: str,
 ) -> int:
     count = 0
-    for record in records:
+    for record in _iter_flattened(records):
         payload = wrap_analytics_record(record, report_type)
         write_json_event(
             event_writer=event_writer,
