@@ -1,7 +1,7 @@
 Anthropic Claude Enterprise Add-on for Splunk
 ==============================================
 
-Version: 1.2.9
+Version: 1.3.0
 Author: Manan Grover
 License: Apache-2.0
 
@@ -147,6 +147,21 @@ encrypted and are never written to logs.
 
 RELEASE NOTES
 -------------
+1.3.0
+* User-by-model and user-by-product panels read only rows that carry the
+  model/product dimension; "unattributed" no longer appears anywhere on
+  the dashboard, and legacy rows can no longer hide attributed data.
+* Grouped reports are requested in 30-day windows: the API rejected the
+  90-day grouped re-collection with a 400, which previously fell back to
+  ungrouped rows (no model/product) for the whole backfill.
+* A grouped request that fails mid-pagination no longer emits the
+  grouped pages and then the full ungrouped window (double counting).
+* Report rows without a bucket timestamp are indexed at their window
+  start instead of collection time, so recent-time views no longer show
+  phantom buckets dated today.
+* History re-collects automatically on the first run after upgrade
+  (collection schema v3).
+
 1.2.9
 * Automatic history re-collection: the Analytics Reports input stamps a
   collection schema version in its checkpoint; on the first run after

@@ -44,17 +44,24 @@ class AnalyticsAPI:
     ) -> Iterator[Dict[str, Any]]:
         """Paginate a report, requesting group_by via the API's array-param
         convention (group_by[]); if the API rejects the grouping with a 400,
-        retry ungrouped rather than failing the whole collection."""
+        retry ungrouped rather than failing the whole collection.
+
+        Grouped rows are fully fetched before being yielded: a 400 on a
+        later page must not emit the earlier pages and then re-emit the
+        same window ungrouped (double counting).
+        """
         if group_by:
             grouped = dict(params)
             grouped["group_by[]"] = group_by
             try:
-                yield from self._client.paginate_analytics(path, grouped)
-                return
+                rows = list(self._client.paginate_analytics(path, grouped))
             except AnthropicAPIError as exc:
                 if exc.status_code != 400:
                     raise
                 self.last_group_by_fallback = f"{path}: {exc}"
+            else:
+                yield from rows
+                return
         yield from self._client.paginate_analytics(path, params)
 
     def get_usage_report(

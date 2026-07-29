@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from typing import Any, Dict
 
 from solnlib import log
@@ -37,12 +37,30 @@ from ta_anthropic_claude_enterprise.input_utils import (
 
 
 # Bump when collection output changes shape enough that already-indexed
-# events are wrong or incomplete (e.g. 2 = per-user reports grouped by
-# model/product, per-day user activity with flattened email). A checkpoint
-# stamped with an older version is discarded once so history is re-collected;
-# dashboards read each day from its latest load, so the re-collection
-# replaces the old rows instead of double-counting.
-COLLECTION_SCHEMA_VERSION = 2
+# events are wrong or incomplete (2 = per-user reports grouped by
+# model/product with per-day user activity; 3 = grouped reports requested
+# in bounded windows so large backfills keep model/product attribution).
+# A checkpoint stamped with an older version is discarded once so history
+# is re-collected.
+COLLECTION_SCHEMA_VERSION = 3
+
+
+def _window_chunks(start_date: date, end_date: date, days: int):
+    """Split [start_date, end_date) into consecutive windows of at most
+    `days` days."""
+    windows = []
+    cursor = start_date
+    while cursor < end_date:
+        upper = min(cursor + timedelta(days=days), end_date)
+        windows.append((cursor, upper))
+        cursor = upper
+    return windows
+
+
+def _day_to_rfc3339(day: date) -> str:
+    return datetime.combine(day, datetime.min.time(), tzinfo=timezone.utc).strftime(
+        "%Y-%m-%dT%H:%M:%SZ"
+    )
 
 
 def validate_input(definition: smi.ValidationDefinition) -> None:
@@ -115,12 +133,10 @@ def _collect_analytics(
         state = {}
         backfill_days = 90
     start_date = resolve_analytics_start_date(state, end_date, backfill_days)
-    starting_at = datetime.combine(
-        start_date, datetime.min.time(), tzinfo=timezone.utc
-    ).strftime("%Y-%m-%dT%H:%M:%SZ")
-    ending_at = datetime.combine(
-        end_date, datetime.min.time(), tzinfo=timezone.utc
-    ).strftime("%Y-%m-%dT%H:%M:%SZ")
+    # Long grouped report windows can be rejected with a 400; request the
+    # reports in bounded chunks so grouping (model/product attribution)
+    # survives large backfills.
+    report_windows = _window_chunks(start_date, end_date, days=30)
 
     counts: Dict[str, int] = {
         SOURCETYPE_ANALYTICS_SUMMARY: 0,
@@ -139,65 +155,46 @@ def _collect_analytics(
         )
 
     group_by = ["product", "model"]
-    if parse_bool(input_item.get("collect_usage"), True):
-        counts[SOURCETYPE_ANALYTICS_USAGE] = _emit_paginated_report(
-            iterator=analytics.get_usage_report(
-                starting_at=starting_at,
-                ending_at=ending_at,
-                bucket_width=bucket_width,
-                group_by=group_by,
-            ),
-            report_type="usage",
-            sourcetype=SOURCETYPE_ANALYTICS_USAGE,
-            event_writer=event_writer,
-            index=index,
-            source=f"{source_prefix}:usage",
-        )
-
-    if parse_bool(input_item.get("collect_cost"), True):
-        counts[SOURCETYPE_ANALYTICS_COST] = _emit_paginated_report(
-            iterator=analytics.get_cost_report(
-                starting_at=starting_at,
-                ending_at=ending_at,
-                bucket_width=bucket_width,
-                group_by=group_by,
-            ),
-            report_type="cost",
-            sourcetype=SOURCETYPE_ANALYTICS_COST,
-            event_writer=event_writer,
-            index=index,
-            source=f"{source_prefix}:cost",
-        )
-
-    if parse_bool(input_item.get("collect_user_usage"), True):
-        counts[SOURCETYPE_ANALYTICS_USER_USAGE] = _emit_paginated_report(
-            iterator=analytics.get_user_usage_report(
-                starting_at=starting_at,
-                ending_at=ending_at,
-                bucket_width=bucket_width,
-                group_by=group_by,
-            ),
-            report_type="user_usage",
-            sourcetype=SOURCETYPE_ANALYTICS_USER_USAGE,
-            event_writer=event_writer,
-            index=index,
-            source=f"{source_prefix}:user_usage",
-        )
-
-    if parse_bool(input_item.get("collect_user_cost"), True):
-        counts[SOURCETYPE_ANALYTICS_USER_COST] = _emit_paginated_report(
-            iterator=analytics.get_user_cost_report(
-                starting_at=starting_at,
-                ending_at=ending_at,
-                bucket_width=bucket_width,
-                group_by=group_by,
-            ),
-            report_type="user_cost",
-            sourcetype=SOURCETYPE_ANALYTICS_USER_COST,
-            event_writer=event_writer,
-            index=index,
-            source=f"{source_prefix}:user_cost",
-        )
+    report_specs = [
+        (
+            "collect_usage",
+            analytics.get_usage_report,
+            "usage",
+            SOURCETYPE_ANALYTICS_USAGE,
+        ),
+        ("collect_cost", analytics.get_cost_report, "cost", SOURCETYPE_ANALYTICS_COST),
+        (
+            "collect_user_usage",
+            analytics.get_user_usage_report,
+            "user_usage",
+            SOURCETYPE_ANALYTICS_USER_USAGE,
+        ),
+        (
+            "collect_user_cost",
+            analytics.get_user_cost_report,
+            "user_cost",
+            SOURCETYPE_ANALYTICS_USER_COST,
+        ),
+    ]
+    for setting, fetch, report_type, sourcetype in report_specs:
+        if not parse_bool(input_item.get(setting), True):
+            continue
+        for window_start, window_end in report_windows:
+            window_starting_at = _day_to_rfc3339(window_start)
+            counts[sourcetype] += _emit_paginated_report(
+                iterator=fetch(
+                    starting_at=window_starting_at,
+                    ending_at=_day_to_rfc3339(window_end),
+                    bucket_width=bucket_width,
+                    group_by=group_by,
+                ),
+                report_type=report_type,
+                sourcetype=sourcetype,
+                event_writer=event_writer,
+                index=index,
+                source=f"{source_prefix}:{report_type}",
+                default_time=window_starting_at,
+            )
 
     if parse_bool(input_item.get("collect_user_activity"), True):
         counts[SOURCETYPE_ANALYTICS_USER_ACTIVITY] = _emit_paginated_report(
@@ -303,6 +300,7 @@ def _emit_paginated_report(
     event_writer: smi.EventWriter,
     index: str,
     source: str,
+    default_time: str = None,
 ) -> int:
     count = 0
     for record in _iter_flattened(iterator):
@@ -313,7 +311,10 @@ def _emit_paginated_report(
             index=index,
             sourcetype=sourcetype,
             source=source,
-            event_time=record.get("starting_at") or record.get("date"),
+            event_time=record.get("starting_at")
+            or record.get("date")
+            or record.get("ending_at")
+            or default_time,
         )
         count += 1
     return count
