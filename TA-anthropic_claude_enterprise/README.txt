@@ -1,7 +1,7 @@
 Anthropic Claude Enterprise Add-on for Splunk
 ==============================================
 
-Version: 1.2.4
+Version: 1.2.5
 Author: Manan Grover
 License: Apache-2.0
 
@@ -113,6 +113,9 @@ DASHBOARDS
   multi-IP anomalies, and compliance-API access auditing.
 * Governance - directory users/groups, invitations, project and
   conversation activity, agent lifecycle events.
+* User Drilldown - who is using what and how: per-user spend, tokens,
+  product mix, behavior classification, engagement metrics, and recent
+  audit-feed actions, with an org-wide model-mix context panel.
 * Monitoring Dashboard (UCC) - add-on internal health, errors, and
   ingestion volume.
 
@@ -145,6 +148,15 @@ encrypted and are never written to logs.
 
 RELEASE NOTES
 -------------
+1.2.5
+* New User Drilldown dashboard: per-user spend, tokens, product mix, and
+  behavior profiling. A Team Utilization Profile table classifies each
+  user (Developer, Builder, Analyst, Chat user, ...) from analytics and
+  audit signals; clicking a row drills into that user's spend trend,
+  product mix, engagement metrics, activity pattern, and recent actions.
+  Org-wide model mix is shown for context (Anthropic attributes model
+  usage at the organization level only, not per user).
+
 1.2.4
 * Usage/cost reports now request grouping with the API's array-parameter
   convention (group_by[]), so product and model dimensions populate; a

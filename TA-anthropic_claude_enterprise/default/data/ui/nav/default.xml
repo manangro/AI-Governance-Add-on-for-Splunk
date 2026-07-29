@@ -6,5 +6,6 @@
     <view name="claude_security_audit"/>
     <view name="claude_ai_governance"/>
     <view name="claude_analytics"/>
+    <view name="claude_user_drilldown"/>
     <view name="search"/>
 </nav>
