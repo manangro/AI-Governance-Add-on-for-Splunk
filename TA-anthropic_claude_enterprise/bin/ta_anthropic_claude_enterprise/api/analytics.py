@@ -91,29 +91,39 @@ class AnalyticsAPI:
         self,
         starting_at: str,
         ending_at: Optional[str] = None,
-        limit: int = 100,
-    ) -> Dict[str, Any]:
+        bucket_width: str = "1d",
+        group_by: Optional[List[str]] = None,
+        limit: int = 1000,
+    ) -> Iterator[Dict[str, Any]]:
         params: Dict[str, Any] = {
             "starting_at": starting_at,
+            "bucket_width": bucket_width,
             "limit": limit,
         }
         if ending_at:
             params["ending_at"] = ending_at
-        return self._client.analytics_get("/v1/organizations/analytics/user_usage_report", params)
+        return self._paginate_grouped(
+            "/v1/organizations/analytics/user_usage_report", params, group_by
+        )
 
     def get_user_cost_report(
         self,
         starting_at: str,
         ending_at: Optional[str] = None,
-        limit: int = 100,
-    ) -> Dict[str, Any]:
+        bucket_width: str = "1d",
+        group_by: Optional[List[str]] = None,
+        limit: int = 1000,
+    ) -> Iterator[Dict[str, Any]]:
         params: Dict[str, Any] = {
             "starting_at": starting_at,
+            "bucket_width": bucket_width,
             "limit": limit,
         }
         if ending_at:
             params["ending_at"] = ending_at
-        return self._client.analytics_get("/v1/organizations/analytics/user_cost_report", params)
+        return self._paginate_grouped(
+            "/v1/organizations/analytics/user_cost_report", params, group_by
+        )
 
     def list_user_activity(
         self,
@@ -124,4 +134,6 @@ class AnalyticsAPI:
             "starting_date": starting_date.isoformat(),
             "ending_date": ending_date.isoformat(),
         }
-        return self._client.paginate_analytics("/v1/organizations/analytics/users", params)
+        return self._client.paginate_analytics(
+            "/v1/organizations/analytics/users", params
+        )

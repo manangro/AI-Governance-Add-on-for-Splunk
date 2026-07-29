@@ -1,7 +1,7 @@
 Anthropic Claude Enterprise Add-on for Splunk
 ==============================================
 
-Version: 1.2.5
+Version: 1.2.6
 Author: Manan Grover
 License: Apache-2.0
 
@@ -106,16 +106,15 @@ DASHBOARDS
 * Usage & Spend Analytics - active users, adoption, token mix and cache
   hit rate (tokenomics), spend by product/model, blended cost per 1M
   tokens, top users, spend-limit utilization, pending limit requests,
-  Claude Code tool acceptance, connector usage.
+  Claude Code tool acceptance, connector usage; per-user drilldown: click
+  any user to see their spend by model, product mix (Claude Code,
+  Claude.ai, Cowork), daily spend/requests/tokens by product and model.
 * Security Audit - access failures, admin and org changes (API keys,
   roles, spend limits, integrations), data exports, file activity,
   artifact publishing/sharing exposure, user activity by IP with
   multi-IP anomalies, and compliance-API access auditing.
 * Governance - directory users/groups, invitations, project and
   conversation activity, agent lifecycle events.
-* User Drilldown - who is using what and how: per-user spend, tokens,
-  product mix, behavior classification, engagement metrics, and recent
-  audit-feed actions, with an org-wide model-mix context panel.
 * Monitoring Dashboard (UCC) - add-on internal health, errors, and
   ingestion volume.
 
@@ -148,14 +147,20 @@ encrypted and are never written to logs.
 
 RELEASE NOTES
 -------------
-1.2.5
-* New User Drilldown dashboard: per-user spend, tokens, product mix, and
-  behavior profiling. A Team Utilization Profile table classifies each
-  user (Developer, Builder, Analyst, Chat user, ...) from analytics and
-  audit signals; clicking a row drills into that user's spend trend,
-  product mix, engagement metrics, activity pattern, and recent actions.
-  Org-wide model mix is shown for context (Anthropic attributes model
-  usage at the organization level only, not per user).
+1.2.6
+* Per-user model and product attribution: the Analytics Reports input now
+  collects the per-user usage and cost reports grouped by model and
+  product (group_by[]), so every per-user row carries which model and
+  which product (Claude Code, Claude.ai, Cowork, Office Agent) it came
+  from. A 400 response falls back to ungrouped collection.
+* Per-user reports are now fully paginated (previously capped at the
+  first 100 rows per collection).
+* Usage & Spend Analytics dashboard: Top Users tables are click-to-drill;
+  new panels for spend by user and model, tokens by user and product,
+  and selected-user model mix, product mix, daily spend/requests/tokens
+  by product and model. A hint panel explains how to backfill history
+  with the new dimensions (create a fresh Analytics Reports input with
+  backfill_days=90).
 
 1.2.4
 * Usage/cost reports now request grouping with the API's array-parameter

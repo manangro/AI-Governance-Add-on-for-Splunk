@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from datetime import date, datetime, timezone
-from typing import Any, Dict, List
+from typing import Any, Dict
 
 from solnlib import log
 from splunklib import modularinput as smi
@@ -23,7 +23,10 @@ from ta_anthropic_claude_enterprise.constants import (
     SOURCETYPE_ANALYTICS_USER_COST,
     SOURCETYPE_ANALYTICS_USER_USAGE,
 )
-from ta_anthropic_claude_enterprise.events import wrap_analytics_record, wrap_spend_limit_record
+from ta_anthropic_claude_enterprise.events import (
+    wrap_analytics_record,
+    wrap_spend_limit_record,
+)
 from ta_anthropic_claude_enterprise.input_utils import (
     configure_logger,
     logger_for_input,
@@ -81,7 +84,9 @@ def _collect_analytics(
     event_writer: smi.EventWriter,
 ) -> Dict[str, int]:
     account_name = input_item.get("account")
-    client = build_client_from_account(session_key, account_name, require_analytics=True)
+    client = build_client_from_account(
+        session_key, account_name, require_analytics=True
+    )
     analytics = AnalyticsAPI(client)
     checkpoint = CheckpointStore(session_key)
     state = checkpoint.get(input_key)
@@ -93,12 +98,12 @@ def _collect_analytics(
     end_date = AnalyticsAPI.latest_finalized_date()
     backfill_days = min(parse_int(input_item.get("backfill_days"), 7), 90)
     start_date = resolve_analytics_start_date(state, end_date, backfill_days)
-    starting_at = datetime.combine(start_date, datetime.min.time(), tzinfo=timezone.utc).strftime(
-        "%Y-%m-%dT%H:%M:%SZ"
-    )
-    ending_at = datetime.combine(end_date, datetime.min.time(), tzinfo=timezone.utc).strftime(
-        "%Y-%m-%dT%H:%M:%SZ"
-    )
+    starting_at = datetime.combine(
+        start_date, datetime.min.time(), tzinfo=timezone.utc
+    ).strftime("%Y-%m-%dT%H:%M:%SZ")
+    ending_at = datetime.combine(
+        end_date, datetime.min.time(), tzinfo=timezone.utc
+    ).strftime("%Y-%m-%dT%H:%M:%SZ")
 
     counts: Dict[str, int] = {
         SOURCETYPE_ANALYTICS_SUMMARY: 0,
@@ -148,9 +153,13 @@ def _collect_analytics(
         )
 
     if parse_bool(input_item.get("collect_user_usage"), True):
-        response = analytics.get_user_usage_report(starting_at=starting_at, ending_at=ending_at)
-        counts[SOURCETYPE_ANALYTICS_USER_USAGE] = _emit_list_report(
-            response.get("data", []),
+        counts[SOURCETYPE_ANALYTICS_USER_USAGE] = _emit_paginated_report(
+            iterator=analytics.get_user_usage_report(
+                starting_at=starting_at,
+                ending_at=ending_at,
+                bucket_width=bucket_width,
+                group_by=group_by,
+            ),
             report_type="user_usage",
             sourcetype=SOURCETYPE_ANALYTICS_USER_USAGE,
             event_writer=event_writer,
@@ -159,9 +168,13 @@ def _collect_analytics(
         )
 
     if parse_bool(input_item.get("collect_user_cost"), True):
-        response = analytics.get_user_cost_report(starting_at=starting_at, ending_at=ending_at)
-        counts[SOURCETYPE_ANALYTICS_USER_COST] = _emit_list_report(
-            response.get("data", []),
+        counts[SOURCETYPE_ANALYTICS_USER_COST] = _emit_paginated_report(
+            iterator=analytics.get_user_cost_report(
+                starting_at=starting_at,
+                ending_at=ending_at,
+                bucket_width=bucket_width,
+                group_by=group_by,
+            ),
             report_type="user_cost",
             sourcetype=SOURCETYPE_ANALYTICS_USER_COST,
             event_writer=event_writer,
@@ -171,7 +184,9 @@ def _collect_analytics(
 
     if parse_bool(input_item.get("collect_user_activity"), True):
         counts[SOURCETYPE_ANALYTICS_USER_ACTIVITY] = _emit_paginated_report(
-            iterator=analytics.list_user_activity(starting_date=start_date, ending_date=end_date),
+            iterator=analytics.list_user_activity(
+                starting_date=start_date, ending_date=end_date
+            ),
             report_type="user_activity",
             sourcetype=SOURCETYPE_ANALYTICS_USER_ACTIVITY,
             event_writer=event_writer,
@@ -190,7 +205,9 @@ def _collect_analytics(
             source=f"{source_prefix}:spend_limits",
         )
         counts[SOURCETYPE_ANALYTICS_SPEND_LIMIT_REQUEST] = _emit_spend_limit_report(
-            iterator=spend_limits.list_spend_limit_increase_requests(status=["pending"]),
+            iterator=spend_limits.list_spend_limit_increase_requests(
+                status=["pending"]
+            ),
             record_type="spend_limit_request",
             sourcetype=SOURCETYPE_ANALYTICS_SPEND_LIMIT_REQUEST,
             event_writer=event_writer,
@@ -267,29 +284,6 @@ def _emit_paginated_report(
             sourcetype=sourcetype,
             source=source,
             event_time=record.get("starting_at") or record.get("date"),
-        )
-        count += 1
-    return count
-
-
-def _emit_list_report(
-    records: List[Dict[str, Any]],
-    report_type: str,
-    sourcetype: str,
-    event_writer: smi.EventWriter,
-    index: str,
-    source: str,
-) -> int:
-    count = 0
-    for record in _iter_flattened(records):
-        payload = wrap_analytics_record(record, report_type)
-        write_json_event(
-            event_writer=event_writer,
-            payload=payload,
-            index=index,
-            sourcetype=sourcetype,
-            source=source,
-            event_time=record.get("date") or record.get("starting_at"),
         )
         count += 1
     return count

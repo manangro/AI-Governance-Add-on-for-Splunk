@@ -220,26 +220,143 @@
   </row>
   <row>
     <panel>
-      <title>Top 20 Users by Cost (USD)</title>
+      <title>Top 20 Users by Cost (USD) - click a user to drill down</title>
       <table>
         <search>
-          <query>`claude_index` sourcetype="anthropic:analytics:user_cost" (("$user$"="*") OR email="$user$") | eval cost_usd=coalesce(tonumber(amount)/100, total_cost_usd) | stats sum(cost_usd) AS cost_usd by email | eval cost_usd=round(cost_usd, 2) | sort - cost_usd | head 20 | rename email AS user, cost_usd AS "cost (USD)"</query>
+          <query>`claude_index` sourcetype="anthropic:analytics:user_cost" (("$user$"="*") OR email="$user$") | eval cost_usd=coalesce(tonumber(amount)/100, total_cost_usd) | stats sum(cost_usd) AS cost_usd values(model) AS models values(product) AS products by email | eval cost_usd=round(cost_usd, 2) | sort - cost_usd | head 20 | rename email AS user, cost_usd AS "cost (USD)"</query>
           <earliest>$time.earliest$</earliest>
           <latest>$time.latest$</latest>
         </search>
-        <option name="drilldown">none</option>
+        <drilldown>
+          <set token="form.user">$row.user$</set>
+        </drilldown>
       </table>
     </panel>
     <panel>
-      <title>Top 20 Users by Tokens</title>
+      <title>Top 20 Users by Tokens - click a user to drill down</title>
       <table>
         <search>
           <query>`claude_index` sourcetype="anthropic:analytics:user_usage" (("$user$"="*") OR email="$user$") | stats sum(output_tokens) AS output_tokens sum(uncached_input_tokens) AS input_tokens by email | eval total_tokens=coalesce(output_tokens,0)+coalesce(input_tokens,0) | sort - total_tokens | head 20 | table email, output_tokens, input_tokens, total_tokens</query>
           <earliest>$time.earliest$</earliest>
           <latest>$time.latest$</latest>
         </search>
-        <option name="drilldown">none</option>
+        <drilldown>
+          <set token="form.user">$row.email$</set>
+        </drilldown>
       </table>
+    </panel>
+  </row>
+  <search>
+    <query>`claude_index` sourcetype="anthropic:analytics:user_cost" model=* | head 1 | stats count</query>
+    <earliest>$time.earliest$</earliest>
+    <latest>$time.latest$</latest>
+    <done>
+      <condition match="$result.count$ == 0">
+        <set token="show_user_dims_hint">true</set>
+      </condition>
+      <condition>
+        <unset token="show_user_dims_hint"></unset>
+      </condition>
+    </done>
+  </search>
+  <row depends="$show_user_dims_hint$">
+    <panel>
+      <title>User-by-model and user-by-product panels need re-collected data</title>
+      <html>
+        <p>The panels below break per-user spend and tokens down by <b>model</b> and <b>product</b>. Events collected by versions before 1.2.6 do not carry these dimensions. After upgrading, create a <b>new</b> Analytics Reports input (a new name gets a fresh checkpoint) with <code>backfill_days=90</code> to re-collect history with model and product attribution, then disable the old input. This notice disappears once dimensioned data is indexed.</p>
+      </html>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Spend by User and Model (USD)</title>
+      <chart>
+        <search>
+          <query>`claude_index` sourcetype="anthropic:analytics:user_cost" (("$user$"="*") OR email="$user$") | eval cost_usd=coalesce(tonumber(amount)/100, total_cost_usd) | eval model=coalesce(model, "unattributed") | chart sum(cost_usd) AS spend over email by model | addtotals fieldname=_total | sort - _total | fields - _total | head 20</query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
+        </search>
+        <option name="charting.chart">bar</option>
+        <option name="charting.chart.stackMode">stacked</option>
+        <option name="charting.legend.placement">bottom</option>
+      </chart>
+    </panel>
+    <panel>
+      <title>Tokens by User and Product</title>
+      <chart>
+        <search>
+          <query>`claude_index` sourcetype="anthropic:analytics:user_usage" (("$user$"="*") OR email="$user$") | eval tokens=coalesce(output_tokens,0)+coalesce(uncached_input_tokens,0)+coalesce(cache_read_input_tokens,0) | eval product_label=case(product="claude_code", "Claude Code", product="cowork", "Cowork", product="office_agent", "Office Agent", product="chat", "Claude.ai", isnotnull(product), product, 1=1, "Unattributed") | chart sum(tokens) AS tokens over email by product_label | addtotals fieldname=_total | sort - _total | fields - _total | head 20</query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
+        </search>
+        <option name="charting.chart">bar</option>
+        <option name="charting.chart.stackMode">stacked</option>
+        <option name="charting.legend.placement">bottom</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Selected User: Model Mix by Spend (USD)</title>
+      <chart>
+        <search>
+          <query>`claude_index` sourcetype="anthropic:analytics:user_cost" (("$user$"="*") OR email="$user$") | eval cost_usd=coalesce(tonumber(amount)/100, total_cost_usd) | eval model=coalesce(model, "unattributed") | stats sum(cost_usd) AS spend by model | eval spend=round(spend, 2) | sort - spend</query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
+        </search>
+        <option name="charting.chart">pie</option>
+      </chart>
+    </panel>
+    <panel>
+      <title>Selected User: Product Mix by Tokens</title>
+      <chart>
+        <search>
+          <query>`claude_index` sourcetype="anthropic:analytics:user_usage" (("$user$"="*") OR email="$user$") | eval tokens=coalesce(output_tokens,0)+coalesce(uncached_input_tokens,0)+coalesce(cache_read_input_tokens,0) | eval product_label=case(product="claude_code", "Claude Code", product="cowork", "Cowork", product="office_agent", "Office Agent", product="chat", "Claude.ai", isnotnull(product), product, 1=1, "Unattributed") | stats sum(tokens) AS tokens by product_label | sort - tokens</query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
+        </search>
+        <option name="charting.chart">pie</option>
+      </chart>
+    </panel>
+    <panel>
+      <title>Selected User: Daily Spend by Product (USD)</title>
+      <chart>
+        <search>
+          <query>`claude_index` sourcetype="anthropic:analytics:user_cost" (("$user$"="*") OR email="$user$") | eval cost_usd=coalesce(tonumber(amount)/100, total_cost_usd) | eval product_label=case(product="claude_code", "Claude Code", product="cowork", "Cowork", product="office_agent", "Office Agent", product="chat", "Claude.ai", isnotnull(product), product, 1=1, "Unattributed") | timechart span=1d sum(cost_usd) AS spend by product_label</query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
+        </search>
+        <option name="charting.chart">column</option>
+        <option name="charting.chart.stackMode">stacked</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Selected User: Daily Requests by Product (where time is spent)</title>
+      <chart>
+        <search>
+          <query>`claude_index` sourcetype="anthropic:analytics:user_usage" (("$user$"="*") OR email="$user$") | eval product_label=case(product="claude_code", "Claude Code", product="cowork", "Cowork", product="office_agent", "Office Agent", product="chat", "Claude.ai", isnotnull(product), product, 1=1, "Unattributed") | timechart span=1d sum(requests) AS requests by product_label</query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
+        </search>
+        <option name="charting.chart">column</option>
+        <option name="charting.chart.stackMode">stacked</option>
+        <option name="charting.legend.placement">bottom</option>
+      </chart>
+    </panel>
+    <panel>
+      <title>Selected User: Daily Tokens by Model</title>
+      <chart>
+        <search>
+          <query>`claude_index` sourcetype="anthropic:analytics:user_usage" (("$user$"="*") OR email="$user$") | eval tokens=coalesce(output_tokens,0)+coalesce(uncached_input_tokens,0)+coalesce(cache_read_input_tokens,0) | eval model=coalesce(model, "unattributed") | timechart span=1d sum(tokens) AS tokens by model</query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
+        </search>
+        <option name="charting.chart">column</option>
+        <option name="charting.chart.stackMode">stacked</option>
+        <option name="charting.legend.placement">bottom</option>
+      </chart>
     </panel>
   </row>
   <row>
