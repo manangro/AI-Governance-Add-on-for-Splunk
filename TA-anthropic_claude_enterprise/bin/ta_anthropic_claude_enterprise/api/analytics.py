@@ -130,10 +130,20 @@ class AnalyticsAPI:
         starting_date: date,
         ending_date: date,
     ) -> Iterator[Dict[str, Any]]:
-        params = {
-            "starting_date": starting_date.isoformat(),
-            "ending_date": ending_date.isoformat(),
-        }
-        return self._client.paginate_analytics(
-            "/v1/organizations/analytics/users", params
-        )
+        """Yield per-user activity rows, one per user per day.
+
+        The endpoint's date-range mode returns a single rollup row per user
+        for the whole window, which breaks daily trend panels; query each
+        day in [starting_date, ending_date) with the single-day `date`
+        parameter instead and stamp the day onto every row.
+        """
+        day = starting_date
+        while day < ending_date:
+            params = {"date": day.isoformat(), "limit": 1000}
+            for record in self._client.paginate_analytics(
+                "/v1/organizations/analytics/users", params
+            ):
+                if isinstance(record, dict) and "date" not in record:
+                    record["date"] = day.isoformat()
+                yield record
+            day += timedelta(days=1)

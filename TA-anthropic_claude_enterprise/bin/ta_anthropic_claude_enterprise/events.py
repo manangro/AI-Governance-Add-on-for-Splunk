@@ -4,7 +4,10 @@ from __future__ import annotations
 
 from typing import Any, Dict, Optional
 
-from ta_anthropic_claude_enterprise.constants import AUTH_EVENT_TYPES, CHANGE_EVENT_TYPES
+from ta_anthropic_claude_enterprise.constants import (
+    AUTH_EVENT_TYPES,
+    CHANGE_EVENT_TYPES,
+)
 
 
 def normalize_activity(activity: Dict[str, Any]) -> Dict[str, Any]:
@@ -43,7 +46,9 @@ def normalize_activity(activity: Dict[str, Any]) -> Dict[str, Any]:
     entity_info = activity.get("entity_info") or activity.get("entityInfo")
     if entity_info:
         normalized["entity_info"] = entity_info
-        entity_email = _extract_email(entity_info) if isinstance(entity_info, dict) else None
+        entity_email = (
+            _extract_email(entity_info) if isinstance(entity_info, dict) else None
+        )
         if entity_email:
             normalized["entity_email"] = entity_email
             if not normalized.get("actor_email"):
@@ -126,16 +131,27 @@ def wrap_spend_limit_record(
         spend_summary = record.get("spend_summary") or {}
         if isinstance(spend_summary, dict):
             payload["request_spend_limit_cents"] = spend_summary.get("amount")
-            payload["request_period_spend_cents"] = spend_summary.get("period_to_date_spend")
-            _apply_cents_to_usd(payload, "request_spend_limit_cents", "request_spend_limit_usd")
-            _apply_cents_to_usd(payload, "request_period_spend_cents", "request_period_spend_usd")
+            payload["request_period_spend_cents"] = spend_summary.get(
+                "period_to_date_spend"
+            )
+            _apply_cents_to_usd(
+                payload, "request_spend_limit_cents", "request_spend_limit_usd"
+            )
+            _apply_cents_to_usd(
+                payload, "request_period_spend_cents", "request_period_spend_usd"
+            )
     if extra:
         payload.update(extra)
     return payload
 
 
 def _flatten_actor_fields(record: Dict[str, Any]) -> None:
+    # Analytics rows identify the user as either "actor" (usage/cost
+    # reports: user_id, email, name) or "user" (user-activity rows:
+    # id, email_address).
     actor = record.get("actor")
+    if not isinstance(actor, dict):
+        actor = record.get("user")
     if not isinstance(actor, dict):
         return
     email = actor.get("email") or actor.get("email_address")
@@ -143,7 +159,7 @@ def _flatten_actor_fields(record: Dict[str, Any]) -> None:
         record["email"] = email
     if email and "actor_email" not in record:
         record["actor_email"] = email
-    user_id = actor.get("user_id")
+    user_id = actor.get("user_id") or actor.get("id")
     if user_id and "user_id" not in record:
         record["user_id"] = user_id
     name = actor.get("name")
@@ -169,7 +185,9 @@ def _normalize_spend_limit_amounts(record: Dict[str, Any]) -> None:
         record["utilization_pct"] = 100.0
 
 
-def _apply_cents_to_usd(record: Dict[str, Any], cents_field: str, usd_field: str) -> None:
+def _apply_cents_to_usd(
+    record: Dict[str, Any], cents_field: str, usd_field: str
+) -> None:
     raw = record.get(cents_field)
     usd = _money_to_usd(raw)
     if usd is not None:

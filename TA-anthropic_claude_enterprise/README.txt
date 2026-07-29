@@ -1,7 +1,7 @@
 Anthropic Claude Enterprise Add-on for Splunk
 ==============================================
 
-Version: 1.2.7
+Version: 1.2.8
 Author: Manan Grover
 License: Apache-2.0
 
@@ -147,6 +147,23 @@ encrypted and are never written to logs.
 
 RELEASE NOTES
 -------------
+1.2.8
+* Fixed permanently blank per-user activity panels: user-activity rows
+  identify the user as user.email_address (not actor.email) and nest
+  Claude Code tool actions per tool; the collector now flattens the
+  email and the panels read the real field paths.
+* User activity is collected per day (the API's date-range mode returns
+  a single rollup row per user, which broke daily trends); each event
+  carries its activity date as the event time.
+* Claude Code panel upgraded to a productivity table: sessions, commits,
+  pull requests, lines of code added/removed, tool acceptance and reject
+  rate per user. Connector usage now includes Office Agent.
+* New Selected User: Daily Activity by Product panel (Claude.ai and
+  Cowork messages, Cowork and Claude Code sessions per day).
+* Pending Spend-Limit Increase Requests panel hides itself when there
+  are no pending requests instead of showing an empty table.
+* Spend vs. Limit and request amounts rounded to 2 decimals.
+
 1.2.7
 * Analytics dashboards read each day's data from its most recent
   collection only (claude_latest_load macro), so re-collecting history

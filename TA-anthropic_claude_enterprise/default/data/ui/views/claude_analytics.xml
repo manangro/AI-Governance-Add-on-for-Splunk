@@ -247,6 +247,19 @@
     </panel>
   </row>
   <search>
+    <query>`claude_index` sourcetype="anthropic:analytics:spend_limit_request" status="pending" | stats count</query>
+    <earliest>-90d@d</earliest>
+    <latest>now</latest>
+    <done>
+      <condition match="$result.count$ &gt; 0">
+        <set token="has_pending_requests">true</set>
+      </condition>
+      <condition>
+        <unset token="has_pending_requests"></unset>
+      </condition>
+    </done>
+  </search>
+  <search>
     <query>`claude_index` sourcetype="anthropic:analytics:user_cost" | `claude_latest_load` | where isnull(model) AND isnull(product) | stats count</query>
     <earliest>$time.earliest$</earliest>
     <latest>$time.latest$</latest>
@@ -402,18 +415,18 @@
       <title>Spend vs. Limit by User (Latest Snapshot)</title>
       <table>
         <search>
-          <query>`claude_index` sourcetype="anthropic:analytics:spend_limit" (("$user$"="*") OR email="$user$") | eval period_spend_usd=coalesce(tonumber(period_to_date_spend)/100, period_spend_usd) | eval spend_limit_usd=coalesce(tonumber(amount)/100, spend_limit_usd) | eval utilization_pct=case(spend_limit_usd&gt;0, round(100*period_spend_usd/spend_limit_usd,1), isnotnull(utilization_pct), utilization_pct) | stats latest(user_name) AS name latest(period_spend_usd) AS period_spend_usd latest(spend_limit_usd) AS spend_limit_usd latest(utilization_pct) AS utilization_pct latest(limit_source_type) AS limit_source by email | sort - period_spend_usd | rename period_spend_usd AS "spend (USD)", spend_limit_usd AS "limit (USD)", utilization_pct AS "utilization (%)"</query>
+          <query>`claude_index` sourcetype="anthropic:analytics:spend_limit" (("$user$"="*") OR email="$user$") | eval period_spend_usd=coalesce(tonumber(period_to_date_spend)/100, period_spend_usd) | eval spend_limit_usd=coalesce(tonumber(amount)/100, spend_limit_usd) | eval utilization_pct=case(spend_limit_usd&gt;0, round(100*period_spend_usd/spend_limit_usd,1), isnotnull(utilization_pct), utilization_pct) | stats latest(user_name) AS name latest(period_spend_usd) AS period_spend_usd latest(spend_limit_usd) AS spend_limit_usd latest(utilization_pct) AS utilization_pct latest(limit_source_type) AS limit_source by email | eval period_spend_usd=round(period_spend_usd, 2), spend_limit_usd=round(spend_limit_usd, 2) | sort - period_spend_usd | rename period_spend_usd AS "spend (USD)", spend_limit_usd AS "limit (USD)", utilization_pct AS "utilization (%)"</query>
           <earliest>-90d@d</earliest>
           <latest>now</latest>
         </search>
         <option name="drilldown">none</option>
       </table>
     </panel>
-    <panel>
+    <panel depends="$has_pending_requests$">
       <title>Pending Spend-Limit Increase Requests</title>
       <table>
         <search>
-          <query>`claude_index` sourcetype="anthropic:analytics:spend_limit_request" status="pending" (("$user$"="*") OR email="$user$") | eval request_spend_limit_usd=coalesce(tonumber(request_spend_limit_cents)/100, request_spend_limit_usd) | eval request_period_spend_usd=coalesce(tonumber(request_period_spend_cents)/100, request_period_spend_usd) | stats latest(_time) AS _time latest(request_spend_limit_usd) AS requested_limit_usd latest(request_period_spend_usd) AS period_spend_usd by email | sort - _time</query>
+          <query>`claude_index` sourcetype="anthropic:analytics:spend_limit_request" status="pending" (("$user$"="*") OR email="$user$") | eval request_spend_limit_usd=coalesce(tonumber(request_spend_limit_cents)/100, request_spend_limit_usd) | eval request_period_spend_usd=coalesce(tonumber(request_period_spend_cents)/100, request_period_spend_usd) | stats latest(_time) AS _time latest(request_spend_limit_usd) AS requested_limit_usd latest(request_period_spend_usd) AS period_spend_usd by email | eval requested_limit_usd=round(requested_limit_usd, 2), period_spend_usd=round(period_spend_usd, 2) | sort - _time</query>
           <earliest>-90d@d</earliest>
           <latest>now</latest>
         </search>
@@ -423,10 +436,10 @@
   </row>
   <row>
     <panel>
-      <title>Claude Code Tool Acceptance by User</title>
+      <title>Claude Code Productivity by User (sessions, commits, PRs, lines of code, tool acceptance)</title>
       <table>
         <search>
-          <query>`claude_index` sourcetype="anthropic:analytics:user_activity" (("$user$"="*") OR email="$user$") | `claude_latest_load` | stats sum('claude_code_metrics.tool_accepted_count') AS accepted sum('claude_code_metrics.tool_rejected_count') AS rejected by email | eval reject_rate_pct=if((coalesce(accepted,0)+coalesce(rejected,0))&gt;0, round(100*coalesce(rejected,0)/(coalesce(accepted,0)+coalesce(rejected,0)),1), 0) | sort - accepted | head 20</query>
+          <query>`claude_index` sourcetype="anthropic:analytics:user_activity" (("$user$"="*") OR email="$user$") | `claude_latest_load` | stats sum('claude_code_metrics.core_metrics.distinct_session_count') AS sessions sum('claude_code_metrics.core_metrics.commit_count') AS commits sum('claude_code_metrics.core_metrics.pull_request_count') AS pull_requests sum('claude_code_metrics.core_metrics.lines_of_code.added_count') AS loc_added sum('claude_code_metrics.core_metrics.lines_of_code.removed_count') AS loc_removed sum('claude_code_metrics.tool_actions.edit_tool.accepted_count') AS a1 sum('claude_code_metrics.tool_actions.multi_edit_tool.accepted_count') AS a2 sum('claude_code_metrics.tool_actions.notebook_edit_tool.accepted_count') AS a3 sum('claude_code_metrics.tool_actions.write_tool.accepted_count') AS a4 sum('claude_code_metrics.tool_actions.edit_tool.rejected_count') AS r1 sum('claude_code_metrics.tool_actions.multi_edit_tool.rejected_count') AS r2 sum('claude_code_metrics.tool_actions.notebook_edit_tool.rejected_count') AS r3 sum('claude_code_metrics.tool_actions.write_tool.rejected_count') AS r4 by email | eval tools_accepted=coalesce(a1,0)+coalesce(a2,0)+coalesce(a3,0)+coalesce(a4,0), tools_rejected=coalesce(r1,0)+coalesce(r2,0)+coalesce(r3,0)+coalesce(r4,0) | eval reject_rate_pct=if((tools_accepted+tools_rejected)&gt;0, round(100*tools_rejected/(tools_accepted+tools_rejected),1), 0) | where coalesce(sessions,0)&gt;0 OR tools_accepted&gt;0 OR coalesce(commits,0)&gt;0 | sort - sessions | head 20 | table email, sessions, commits, pull_requests, loc_added, loc_removed, tools_accepted, tools_rejected, reject_rate_pct</query>
           <earliest>$time.earliest$</earliest>
           <latest>$time.latest$</latest>
         </search>
@@ -434,15 +447,30 @@
       </table>
     </panel>
     <panel>
-      <title>Connector Usage by User</title>
+      <title>Connector Usage by User (Claude.ai, Cowork, Office Agent)</title>
       <table>
         <search>
-          <query>`claude_index` sourcetype="anthropic:analytics:user_activity" (("$user$"="*") OR email="$user$") | `claude_latest_load` | stats sum('chat_metrics.connectors_used_count') AS chat sum('cowork_metrics.connectors_used_count') AS cowork by email | eval total=coalesce(chat,0)+coalesce(cowork,0) | where total&gt;0 | sort - total | head 20</query>
+          <query>`claude_index` sourcetype="anthropic:analytics:user_activity" (("$user$"="*") OR email="$user$") | `claude_latest_load` | stats sum('chat_metrics.connectors_used_count') AS chat sum('cowork_metrics.connectors_used_count') AS cowork sum('office_metrics.excel.connectors_used_count') AS o1 sum('office_metrics.outlook.connectors_used_count') AS o2 sum('office_metrics.powerpoint.connectors_used_count') AS o3 sum('office_metrics.word.connectors_used_count') AS o4 by email | eval office=coalesce(o1,0)+coalesce(o2,0)+coalesce(o3,0)+coalesce(o4,0), total=coalesce(chat,0)+coalesce(cowork,0)+office | where total&gt;0 | sort - total | head 20 | table email, chat, cowork, office, total</query>
           <earliest>$time.earliest$</earliest>
           <latest>$time.latest$</latest>
         </search>
         <option name="drilldown">none</option>
       </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Selected User: Daily Activity by Product (messages and sessions)</title>
+      <chart>
+        <search>
+          <query>`claude_index` sourcetype="anthropic:analytics:user_activity" (("$user$"="*") OR email="$user$") | `claude_latest_load` | timechart span=1d sum('chat_metrics.message_count') AS "Claude.ai messages" sum('cowork_metrics.message_count') AS "Cowork messages" sum('cowork_metrics.distinct_session_count') AS "Cowork sessions" sum('claude_code_metrics.core_metrics.distinct_session_count') AS "Claude Code sessions"</query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
+        </search>
+        <option name="charting.chart">column</option>
+        <option name="charting.chart.stackMode">stacked</option>
+        <option name="charting.legend.placement">bottom</option>
+      </chart>
     </panel>
   </row>
 </form>
