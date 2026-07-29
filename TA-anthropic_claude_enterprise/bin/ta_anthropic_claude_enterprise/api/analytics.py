@@ -15,6 +15,9 @@ class AnalyticsAPI:
 
     def __init__(self, client: AnthropicClient):
         self._client = client
+        # Set when a grouped report request was rejected with a 400 and the
+        # collection fell back to ungrouped rows (no model/product fields).
+        self.last_group_by_fallback: Optional[str] = None
 
     @classmethod
     def latest_finalized_date(cls) -> date:
@@ -51,6 +54,7 @@ class AnalyticsAPI:
             except AnthropicAPIError as exc:
                 if exc.status_code != 400:
                     raise
+                self.last_group_by_fallback = f"{path}: {exc}"
         yield from self._client.paginate_analytics(path, params)
 
     def get_usage_report(

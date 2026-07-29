@@ -282,6 +282,21 @@
   </row>
   <row>
     <panel>
+      <title>Who Used Which Model - Spend Matrix (USD)</title>
+      <table>
+        <search>
+          <query>`claude_index` sourcetype="anthropic:analytics:user_cost" model=* (("$user$"="*") OR email="$user$") | `claude_latest_load` | eval cost_usd=coalesce(tonumber(amount)/100, total_cost_usd) | stats sum(cost_usd) AS spend by email, model | eval spend=round(spend, 2) | xyseries email model spend | addtotals fieldname=total_usd | sort - total_usd | rename email AS user</query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
+        </search>
+        <drilldown>
+          <set token="form.user">$row.user$</set>
+        </drilldown>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
       <title>Spend by User and Model (USD)</title>
       <chart>
         <search>

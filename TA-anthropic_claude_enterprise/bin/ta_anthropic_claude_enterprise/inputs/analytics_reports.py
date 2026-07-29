@@ -36,6 +36,15 @@ from ta_anthropic_claude_enterprise.input_utils import (
 )
 
 
+# Bump when collection output changes shape enough that already-indexed
+# events are wrong or incomplete (e.g. 2 = per-user reports grouped by
+# model/product, per-day user activity with flattened email). A checkpoint
+# stamped with an older version is discarded once so history is re-collected;
+# dashboards read each day from its latest load, so the re-collection
+# replaces the old rows instead of double-counting.
+COLLECTION_SCHEMA_VERSION = 2
+
+
 def validate_input(definition: smi.ValidationDefinition) -> None:
     return
 
@@ -97,6 +106,14 @@ def _collect_analytics(
 
     end_date = AnalyticsAPI.latest_finalized_date()
     backfill_days = min(parse_int(input_item.get("backfill_days"), 7), 90)
+    if state and state.get("schema_version") != COLLECTION_SCHEMA_VERSION:
+        logger.info(
+            "Analytics collection schema upgraded (adds per-user model/product "
+            "attribution); re-collecting the last 90 days to replace "
+            "unattributed history"
+        )
+        state = {}
+        backfill_days = 90
     start_date = resolve_analytics_start_date(state, end_date, backfill_days)
     starting_at = datetime.combine(
         start_date, datetime.min.time(), tzinfo=timezone.utc
@@ -215,7 +232,20 @@ def _collect_analytics(
             source=f"{source_prefix}:spend_limit_requests",
         )
 
-    checkpoint.set(input_key, {"last_finalized_date": end_date.isoformat()})
+    if getattr(analytics, "last_group_by_fallback", None):
+        logger.warning(
+            "Analytics API rejected group_by; model/product attribution is "
+            "unavailable and data was collected ungrouped: %s",
+            analytics.last_group_by_fallback,
+        )
+
+    checkpoint.set(
+        input_key,
+        {
+            "last_finalized_date": end_date.isoformat(),
+            "schema_version": COLLECTION_SCHEMA_VERSION,
+        },
+    )
     logger.info("Analytics collection window %s to %s", start_date, end_date)
     return counts
 

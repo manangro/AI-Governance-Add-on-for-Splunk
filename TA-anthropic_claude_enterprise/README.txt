@@ -1,7 +1,7 @@
 Anthropic Claude Enterprise Add-on for Splunk
 ==============================================
 
-Version: 1.2.8
+Version: 1.2.9
 Author: Manan Grover
 License: Apache-2.0
 
@@ -147,6 +147,18 @@ encrypted and are never written to logs.
 
 RELEASE NOTES
 -------------
+1.2.9
+* Automatic history re-collection: the Analytics Reports input stamps a
+  collection schema version in its checkpoint; on the first run after
+  this upgrade it re-collects the last 90 days by itself, so per-user
+  model/product attribution appears without creating a new input.
+  Dashboards read each day from its latest load, so the re-collection
+  replaces old rows instead of double-counting.
+* New "Who Used Which Model - Spend Matrix" table: one row per user, one
+  column per model, USD totals, click-to-drill.
+* The input logs a WARNING if the Analytics API rejects group_by and
+  data had to be collected without model/product attribution.
+
 1.2.8
 * Fixed permanently blank per-user activity panels: user-activity rows
   identify the user as user.email_address (not actor.email) and nest
