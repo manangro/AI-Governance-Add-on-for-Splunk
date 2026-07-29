@@ -1,7 +1,7 @@
 Anthropic Claude Enterprise Add-on for Splunk
 ==============================================
 
-Version: 1.2.6
+Version: 1.2.7
 Author: Manan Grover
 License: Apache-2.0
 
@@ -147,6 +147,15 @@ encrypted and are never written to logs.
 
 RELEASE NOTES
 -------------
+1.2.7
+* Analytics dashboards read each day's data from its most recent
+  collection only (claude_latest_load macro), so re-collecting history
+  with a fresh backfill input replaces old rows instead of double-
+  counting them. Events indexed by versions before 1.2.6 lack model and
+  product on per-user rows and show as "Unattributed" until history is
+  re-collected; a hint panel explains the backfill and disappears once
+  the current view is fully attributed.
+
 1.2.6
 * Per-user model and product attribution: the Analytics Reports input now
   collects the per-user usage and cost reports grouped by model and

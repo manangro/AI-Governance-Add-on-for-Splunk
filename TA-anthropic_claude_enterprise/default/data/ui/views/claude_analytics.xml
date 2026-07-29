@@ -87,7 +87,7 @@
       <title>Period Spend (USD)</title>
       <single>
         <search>
-          <query>`claude_index` sourcetype="anthropic:analytics:cost" | eval cost_usd=coalesce(tonumber(amount)/100, total_cost_usd) | stats sum(cost_usd) AS total | eval total=round(total, 2)</query>
+          <query>`claude_index` sourcetype="anthropic:analytics:cost" | `claude_latest_load` | eval cost_usd=coalesce(tonumber(amount)/100, total_cost_usd) | stats sum(cost_usd) AS total | eval total=round(total, 2)</query>
           <earliest>$time.earliest$</earliest>
           <latest>$time.latest$</latest>
         </search>
@@ -100,7 +100,7 @@
       <title>Total Tokens</title>
       <single>
         <search>
-          <query>`claude_index` sourcetype="anthropic:analytics:usage" | eval tokens=coalesce(output_tokens,0)+coalesce(uncached_input_tokens,0)+coalesce(cache_read_input_tokens,0)+coalesce('cache_creation.ephemeral_1h_input_tokens',0)+coalesce('cache_creation.ephemeral_5m_input_tokens',0)+coalesce(cache_creation_input_tokens,0) | stats sum(tokens) AS total_tokens</query>
+          <query>`claude_index` sourcetype="anthropic:analytics:usage" | `claude_latest_load` | eval tokens=coalesce(output_tokens,0)+coalesce(uncached_input_tokens,0)+coalesce(cache_read_input_tokens,0)+coalesce('cache_creation.ephemeral_1h_input_tokens',0)+coalesce('cache_creation.ephemeral_5m_input_tokens',0)+coalesce(cache_creation_input_tokens,0) | stats sum(tokens) AS total_tokens</query>
           <earliest>$time.earliest$</earliest>
           <latest>$time.latest$</latest>
         </search>
@@ -137,7 +137,7 @@
       <title>Token Mix Over Time (Tokenomics)</title>
       <chart>
         <search>
-          <query>`claude_index` sourcetype="anthropic:analytics:usage" | eval cache_creation_tokens=coalesce('cache_creation.ephemeral_1h_input_tokens',0)+coalesce('cache_creation.ephemeral_5m_input_tokens',0)+coalesce(cache_creation_input_tokens,0) | timechart sum(output_tokens) AS "Output" sum(uncached_input_tokens) AS "Uncached Input" sum(cache_read_input_tokens) AS "Cache Read" sum(cache_creation_tokens) AS "Cache Creation"</query>
+          <query>`claude_index` sourcetype="anthropic:analytics:usage" | `claude_latest_load` | eval cache_creation_tokens=coalesce('cache_creation.ephemeral_1h_input_tokens',0)+coalesce('cache_creation.ephemeral_5m_input_tokens',0)+coalesce(cache_creation_input_tokens,0) | timechart sum(output_tokens) AS "Output" sum(uncached_input_tokens) AS "Uncached Input" sum(cache_read_input_tokens) AS "Cache Read" sum(cache_creation_tokens) AS "Cache Creation"</query>
           <earliest>$time.earliest$</earliest>
           <latest>$time.latest$</latest>
         </search>
@@ -149,7 +149,7 @@
       <title>Prompt Cache Hit Rate (%)</title>
       <single>
         <search>
-          <query>`claude_index` sourcetype="anthropic:analytics:usage" | stats sum(cache_read_input_tokens) AS cached sum(uncached_input_tokens) AS uncached | eval hit_rate=if((coalesce(cached,0)+coalesce(uncached,0))&gt;0, round(100*coalesce(cached,0)/(coalesce(cached,0)+coalesce(uncached,0)),1), null()) | fields hit_rate</query>
+          <query>`claude_index` sourcetype="anthropic:analytics:usage" | `claude_latest_load` | stats sum(cache_read_input_tokens) AS cached sum(uncached_input_tokens) AS uncached | eval hit_rate=if((coalesce(cached,0)+coalesce(uncached,0))&gt;0, round(100*coalesce(cached,0)/(coalesce(cached,0)+coalesce(uncached,0)),1), null()) | fields hit_rate</query>
           <earliest>$time.earliest$</earliest>
           <latest>$time.latest$</latest>
         </search>
@@ -160,7 +160,7 @@
       <title>Blended Cost per 1M Tokens (USD)</title>
       <single>
         <search>
-          <query>`claude_index` (sourcetype="anthropic:analytics:cost" OR sourcetype="anthropic:analytics:usage") | eval cost_usd=if(sourcetype="anthropic:analytics:cost", coalesce(tonumber(amount)/100, total_cost_usd), null()) | eval tokens=if(sourcetype="anthropic:analytics:usage", coalesce(output_tokens,0)+coalesce(uncached_input_tokens,0)+coalesce(cache_read_input_tokens,0), null()) | stats sum(cost_usd) AS cost sum(tokens) AS tokens | eval cost_per_mtok=if(tokens&gt;0, round(1000000*cost/tokens, 2), null()) | fields cost_per_mtok</query>
+          <query>`claude_index` (sourcetype="anthropic:analytics:cost" OR sourcetype="anthropic:analytics:usage") | `claude_latest_load` | eval cost_usd=if(sourcetype="anthropic:analytics:cost", coalesce(tonumber(amount)/100, total_cost_usd), null()) | eval tokens=if(sourcetype="anthropic:analytics:usage", coalesce(output_tokens,0)+coalesce(uncached_input_tokens,0)+coalesce(cache_read_input_tokens,0), null()) | stats sum(cost_usd) AS cost sum(tokens) AS tokens | eval cost_per_mtok=if(tokens&gt;0, round(1000000*cost/tokens, 2), null()) | fields cost_per_mtok</query>
           <earliest>$time.earliest$</earliest>
           <latest>$time.latest$</latest>
         </search>
@@ -174,7 +174,7 @@
       <title>Spend by Product (USD)</title>
       <chart>
         <search>
-          <query>`claude_index` sourcetype="anthropic:analytics:cost" | eval cost_usd=coalesce(tonumber(amount)/100, total_cost_usd) | eval product_label=case(product="claude_code", "Claude Code", product="cowork", "Cowork", product="office_agent", "Office Agent", product="chat", "Claude.ai", isnotnull(product), product, 1=1, "Other") | timechart sum(cost_usd) AS spend by product_label</query>
+          <query>`claude_index` sourcetype="anthropic:analytics:cost" | `claude_latest_load` | eval cost_usd=coalesce(tonumber(amount)/100, total_cost_usd) | eval product_label=case(product="claude_code", "Claude Code", product="cowork", "Cowork", product="office_agent", "Office Agent", product="chat", "Claude.ai", isnotnull(product), product, 1=1, "Other") | timechart sum(cost_usd) AS spend by product_label</query>
           <earliest>$time.earliest$</earliest>
           <latest>$time.latest$</latest>
         </search>
@@ -186,7 +186,7 @@
       <title>Token Usage by Product</title>
       <chart>
         <search>
-          <query>`claude_index` sourcetype="anthropic:analytics:usage" | eval product_label=case(product="claude_code", "Claude Code", product="cowork", "Cowork", product="office_agent", "Office Agent", product="chat", "Claude.ai", isnotnull(product), product, 1=1, "Other") | eval tokens=coalesce(output_tokens,0)+coalesce(uncached_input_tokens,0)+coalesce(cache_read_input_tokens,0) | stats sum(tokens) AS tokens by product_label</query>
+          <query>`claude_index` sourcetype="anthropic:analytics:usage" | `claude_latest_load` | eval product_label=case(product="claude_code", "Claude Code", product="cowork", "Cowork", product="office_agent", "Office Agent", product="chat", "Claude.ai", isnotnull(product), product, 1=1, "Other") | eval tokens=coalesce(output_tokens,0)+coalesce(uncached_input_tokens,0)+coalesce(cache_read_input_tokens,0) | stats sum(tokens) AS tokens by product_label</query>
           <earliest>$time.earliest$</earliest>
           <latest>$time.latest$</latest>
         </search>
@@ -199,7 +199,7 @@
       <title>Spend by Model (USD)</title>
       <chart>
         <search>
-          <query>`claude_index` sourcetype="anthropic:analytics:cost" | eval cost_usd=coalesce(tonumber(amount)/100, total_cost_usd) | timechart sum(cost_usd) AS spend by model</query>
+          <query>`claude_index` sourcetype="anthropic:analytics:cost" | `claude_latest_load` | eval cost_usd=coalesce(tonumber(amount)/100, total_cost_usd) | timechart sum(cost_usd) AS spend by model</query>
           <earliest>$time.earliest$</earliest>
           <latest>$time.latest$</latest>
         </search>
@@ -210,7 +210,7 @@
       <title>Cost per 1M Tokens by Model (USD)</title>
       <chart>
         <search>
-          <query>`claude_index` (sourcetype="anthropic:analytics:cost" OR sourcetype="anthropic:analytics:usage") model=* | eval cost_usd=if(sourcetype="anthropic:analytics:cost", coalesce(tonumber(amount)/100, total_cost_usd), null()) | eval tokens=if(sourcetype="anthropic:analytics:usage", coalesce(output_tokens,0)+coalesce(uncached_input_tokens,0)+coalesce(cache_read_input_tokens,0), null()) | stats sum(cost_usd) AS cost sum(tokens) AS tokens by model | where tokens&gt;0 AND cost&gt;0 | eval cost_per_mtok=round(1000000*cost/tokens, 2) | sort - cost_per_mtok | fields model, cost_per_mtok</query>
+          <query>`claude_index` (sourcetype="anthropic:analytics:cost" OR sourcetype="anthropic:analytics:usage") model=* | `claude_latest_load` | eval cost_usd=if(sourcetype="anthropic:analytics:cost", coalesce(tonumber(amount)/100, total_cost_usd), null()) | eval tokens=if(sourcetype="anthropic:analytics:usage", coalesce(output_tokens,0)+coalesce(uncached_input_tokens,0)+coalesce(cache_read_input_tokens,0), null()) | stats sum(cost_usd) AS cost sum(tokens) AS tokens by model | where tokens&gt;0 AND cost&gt;0 | eval cost_per_mtok=round(1000000*cost/tokens, 2) | sort - cost_per_mtok | fields model, cost_per_mtok</query>
           <earliest>$time.earliest$</earliest>
           <latest>$time.latest$</latest>
         </search>
@@ -223,7 +223,7 @@
       <title>Top 20 Users by Cost (USD) - click a user to drill down</title>
       <table>
         <search>
-          <query>`claude_index` sourcetype="anthropic:analytics:user_cost" (("$user$"="*") OR email="$user$") | eval cost_usd=coalesce(tonumber(amount)/100, total_cost_usd) | stats sum(cost_usd) AS cost_usd values(model) AS models values(product) AS products by email | eval cost_usd=round(cost_usd, 2) | sort - cost_usd | head 20 | rename email AS user, cost_usd AS "cost (USD)"</query>
+          <query>`claude_index` sourcetype="anthropic:analytics:user_cost" (("$user$"="*") OR email="$user$") | `claude_latest_load` | eval cost_usd=coalesce(tonumber(amount)/100, total_cost_usd) | stats sum(cost_usd) AS cost_usd values(model) AS models values(product) AS products by email | eval cost_usd=round(cost_usd, 2) | sort - cost_usd | head 20 | rename email AS user, cost_usd AS "cost (USD)"</query>
           <earliest>$time.earliest$</earliest>
           <latest>$time.latest$</latest>
         </search>
@@ -236,7 +236,7 @@
       <title>Top 20 Users by Tokens - click a user to drill down</title>
       <table>
         <search>
-          <query>`claude_index` sourcetype="anthropic:analytics:user_usage" (("$user$"="*") OR email="$user$") | stats sum(output_tokens) AS output_tokens sum(uncached_input_tokens) AS input_tokens by email | eval total_tokens=coalesce(output_tokens,0)+coalesce(input_tokens,0) | sort - total_tokens | head 20 | table email, output_tokens, input_tokens, total_tokens</query>
+          <query>`claude_index` sourcetype="anthropic:analytics:user_usage" (("$user$"="*") OR email="$user$") | `claude_latest_load` | stats sum(output_tokens) AS output_tokens sum(uncached_input_tokens) AS input_tokens by email | eval total_tokens=coalesce(output_tokens,0)+coalesce(input_tokens,0) | sort - total_tokens | head 20 | table email, output_tokens, input_tokens, total_tokens</query>
           <earliest>$time.earliest$</earliest>
           <latest>$time.latest$</latest>
         </search>
@@ -247,11 +247,11 @@
     </panel>
   </row>
   <search>
-    <query>`claude_index` sourcetype="anthropic:analytics:user_cost" model=* | head 1 | stats count</query>
+    <query>`claude_index` sourcetype="anthropic:analytics:user_cost" | `claude_latest_load` | where isnull(model) AND isnull(product) | stats count</query>
     <earliest>$time.earliest$</earliest>
     <latest>$time.latest$</latest>
     <done>
-      <condition match="$result.count$ == 0">
+      <condition match="$result.count$ &gt; 0">
         <set token="show_user_dims_hint">true</set>
       </condition>
       <condition>
@@ -263,7 +263,7 @@
     <panel>
       <title>User-by-model and user-by-product panels need re-collected data</title>
       <html>
-        <p>The panels below break per-user spend and tokens down by <b>model</b> and <b>product</b>. Events collected by versions before 1.2.6 do not carry these dimensions. After upgrading, create a <b>new</b> Analytics Reports input (a new name gets a fresh checkpoint) with <code>backfill_days=90</code> to re-collect history with model and product attribution, then disable the old input. This notice disappears once dimensioned data is indexed.</p>
+        <p>The panels below break per-user spend and tokens down by <b>model</b> and <b>product</b>. Events collected by versions before 1.2.6 do not carry these dimensions and show as "Unattributed". To fix history: create a <b>new</b> Analytics Reports input (a new name gets a fresh checkpoint) with <code>backfill_days=90</code>, then disable the old input. Re-collected days replace the old ones automatically in these panels - each day is read from its most recent collection only, so the backfill does not double-count spend. This notice disappears once dimensioned data is indexed.</p>
       </html>
     </panel>
   </row>
@@ -272,7 +272,7 @@
       <title>Spend by User and Model (USD)</title>
       <chart>
         <search>
-          <query>`claude_index` sourcetype="anthropic:analytics:user_cost" (("$user$"="*") OR email="$user$") | eval cost_usd=coalesce(tonumber(amount)/100, total_cost_usd) | eval model=coalesce(model, "unattributed") | chart sum(cost_usd) AS spend over email by model | addtotals fieldname=_total | sort - _total | fields - _total | head 20</query>
+          <query>`claude_index` sourcetype="anthropic:analytics:user_cost" (("$user$"="*") OR email="$user$") | `claude_latest_load` | eval cost_usd=coalesce(tonumber(amount)/100, total_cost_usd) | eval model=coalesce(model, "unattributed") | chart sum(cost_usd) AS spend over email by model | addtotals fieldname=_total | sort - _total | fields - _total | head 20</query>
           <earliest>$time.earliest$</earliest>
           <latest>$time.latest$</latest>
         </search>
@@ -285,7 +285,7 @@
       <title>Tokens by User and Product</title>
       <chart>
         <search>
-          <query>`claude_index` sourcetype="anthropic:analytics:user_usage" (("$user$"="*") OR email="$user$") | eval tokens=coalesce(output_tokens,0)+coalesce(uncached_input_tokens,0)+coalesce(cache_read_input_tokens,0) | eval product_label=case(product="claude_code", "Claude Code", product="cowork", "Cowork", product="office_agent", "Office Agent", product="chat", "Claude.ai", isnotnull(product), product, 1=1, "Unattributed") | chart sum(tokens) AS tokens over email by product_label | addtotals fieldname=_total | sort - _total | fields - _total | head 20</query>
+          <query>`claude_index` sourcetype="anthropic:analytics:user_usage" (("$user$"="*") OR email="$user$") | `claude_latest_load` | eval tokens=coalesce(output_tokens,0)+coalesce(uncached_input_tokens,0)+coalesce(cache_read_input_tokens,0) | eval product_label=case(product="claude_code", "Claude Code", product="cowork", "Cowork", product="office_agent", "Office Agent", product="chat", "Claude.ai", isnotnull(product), product, 1=1, "Unattributed") | chart sum(tokens) AS tokens over email by product_label | addtotals fieldname=_total | sort - _total | fields - _total | head 20</query>
           <earliest>$time.earliest$</earliest>
           <latest>$time.latest$</latest>
         </search>
@@ -300,7 +300,7 @@
       <title>Selected User: Model Mix by Spend (USD)</title>
       <chart>
         <search>
-          <query>`claude_index` sourcetype="anthropic:analytics:user_cost" (("$user$"="*") OR email="$user$") | eval cost_usd=coalesce(tonumber(amount)/100, total_cost_usd) | eval model=coalesce(model, "unattributed") | stats sum(cost_usd) AS spend by model | eval spend=round(spend, 2) | sort - spend</query>
+          <query>`claude_index` sourcetype="anthropic:analytics:user_cost" (("$user$"="*") OR email="$user$") | `claude_latest_load` | eval cost_usd=coalesce(tonumber(amount)/100, total_cost_usd) | eval model=coalesce(model, "unattributed") | stats sum(cost_usd) AS spend by model | eval spend=round(spend, 2) | sort - spend</query>
           <earliest>$time.earliest$</earliest>
           <latest>$time.latest$</latest>
         </search>
@@ -311,7 +311,7 @@
       <title>Selected User: Product Mix by Tokens</title>
       <chart>
         <search>
-          <query>`claude_index` sourcetype="anthropic:analytics:user_usage" (("$user$"="*") OR email="$user$") | eval tokens=coalesce(output_tokens,0)+coalesce(uncached_input_tokens,0)+coalesce(cache_read_input_tokens,0) | eval product_label=case(product="claude_code", "Claude Code", product="cowork", "Cowork", product="office_agent", "Office Agent", product="chat", "Claude.ai", isnotnull(product), product, 1=1, "Unattributed") | stats sum(tokens) AS tokens by product_label | sort - tokens</query>
+          <query>`claude_index` sourcetype="anthropic:analytics:user_usage" (("$user$"="*") OR email="$user$") | `claude_latest_load` | eval tokens=coalesce(output_tokens,0)+coalesce(uncached_input_tokens,0)+coalesce(cache_read_input_tokens,0) | eval product_label=case(product="claude_code", "Claude Code", product="cowork", "Cowork", product="office_agent", "Office Agent", product="chat", "Claude.ai", isnotnull(product), product, 1=1, "Unattributed") | stats sum(tokens) AS tokens by product_label | sort - tokens</query>
           <earliest>$time.earliest$</earliest>
           <latest>$time.latest$</latest>
         </search>
@@ -322,7 +322,7 @@
       <title>Selected User: Daily Spend by Product (USD)</title>
       <chart>
         <search>
-          <query>`claude_index` sourcetype="anthropic:analytics:user_cost" (("$user$"="*") OR email="$user$") | eval cost_usd=coalesce(tonumber(amount)/100, total_cost_usd) | eval product_label=case(product="claude_code", "Claude Code", product="cowork", "Cowork", product="office_agent", "Office Agent", product="chat", "Claude.ai", isnotnull(product), product, 1=1, "Unattributed") | timechart span=1d sum(cost_usd) AS spend by product_label</query>
+          <query>`claude_index` sourcetype="anthropic:analytics:user_cost" (("$user$"="*") OR email="$user$") | `claude_latest_load` | eval cost_usd=coalesce(tonumber(amount)/100, total_cost_usd) | eval product_label=case(product="claude_code", "Claude Code", product="cowork", "Cowork", product="office_agent", "Office Agent", product="chat", "Claude.ai", isnotnull(product), product, 1=1, "Unattributed") | timechart span=1d sum(cost_usd) AS spend by product_label</query>
           <earliest>$time.earliest$</earliest>
           <latest>$time.latest$</latest>
         </search>
@@ -336,7 +336,7 @@
       <title>Selected User: Daily Requests by Product (where time is spent)</title>
       <chart>
         <search>
-          <query>`claude_index` sourcetype="anthropic:analytics:user_usage" (("$user$"="*") OR email="$user$") | eval product_label=case(product="claude_code", "Claude Code", product="cowork", "Cowork", product="office_agent", "Office Agent", product="chat", "Claude.ai", isnotnull(product), product, 1=1, "Unattributed") | timechart span=1d sum(requests) AS requests by product_label</query>
+          <query>`claude_index` sourcetype="anthropic:analytics:user_usage" (("$user$"="*") OR email="$user$") | `claude_latest_load` | eval product_label=case(product="claude_code", "Claude Code", product="cowork", "Cowork", product="office_agent", "Office Agent", product="chat", "Claude.ai", isnotnull(product), product, 1=1, "Unattributed") | timechart span=1d sum(requests) AS requests by product_label</query>
           <earliest>$time.earliest$</earliest>
           <latest>$time.latest$</latest>
         </search>
@@ -349,7 +349,7 @@
       <title>Selected User: Daily Tokens by Model</title>
       <chart>
         <search>
-          <query>`claude_index` sourcetype="anthropic:analytics:user_usage" (("$user$"="*") OR email="$user$") | eval tokens=coalesce(output_tokens,0)+coalesce(uncached_input_tokens,0)+coalesce(cache_read_input_tokens,0) | eval model=coalesce(model, "unattributed") | timechart span=1d sum(tokens) AS tokens by model</query>
+          <query>`claude_index` sourcetype="anthropic:analytics:user_usage" (("$user$"="*") OR email="$user$") | `claude_latest_load` | eval tokens=coalesce(output_tokens,0)+coalesce(uncached_input_tokens,0)+coalesce(cache_read_input_tokens,0) | eval model=coalesce(model, "unattributed") | timechart span=1d sum(tokens) AS tokens by model</query>
           <earliest>$time.earliest$</earliest>
           <latest>$time.latest$</latest>
         </search>
@@ -364,7 +364,7 @@
       <title>Top 5 Users' Share of Spend (%)</title>
       <single>
         <search>
-          <query>`claude_index` sourcetype="anthropic:analytics:user_cost" | eval cost_usd=coalesce(tonumber(amount)/100, total_cost_usd) | stats sum(cost_usd) AS user_spend by email | eventstats sum(user_spend) AS org_spend | sort - user_spend | head 5 | stats sum(user_spend) AS top5_spend max(org_spend) AS org_spend | eval concentration_pct=if(org_spend&gt;0, round(100*top5_spend/org_spend,1), null()) | fields concentration_pct</query>
+          <query>`claude_index` sourcetype="anthropic:analytics:user_cost" | `claude_latest_load` | eval cost_usd=coalesce(tonumber(amount)/100, total_cost_usd) | stats sum(cost_usd) AS user_spend by email | eventstats sum(user_spend) AS org_spend | sort - user_spend | head 5 | stats sum(user_spend) AS top5_spend max(org_spend) AS org_spend | eval concentration_pct=if(org_spend&gt;0, round(100*top5_spend/org_spend,1), null()) | fields concentration_pct</query>
           <earliest>$time.earliest$</earliest>
           <latest>$time.latest$</latest>
         </search>
@@ -426,7 +426,7 @@
       <title>Claude Code Tool Acceptance by User</title>
       <table>
         <search>
-          <query>`claude_index` sourcetype="anthropic:analytics:user_activity" (("$user$"="*") OR email="$user$") | stats sum('claude_code_metrics.tool_accepted_count') AS accepted sum('claude_code_metrics.tool_rejected_count') AS rejected by email | eval reject_rate_pct=if((coalesce(accepted,0)+coalesce(rejected,0))&gt;0, round(100*coalesce(rejected,0)/(coalesce(accepted,0)+coalesce(rejected,0)),1), 0) | sort - accepted | head 20</query>
+          <query>`claude_index` sourcetype="anthropic:analytics:user_activity" (("$user$"="*") OR email="$user$") | `claude_latest_load` | stats sum('claude_code_metrics.tool_accepted_count') AS accepted sum('claude_code_metrics.tool_rejected_count') AS rejected by email | eval reject_rate_pct=if((coalesce(accepted,0)+coalesce(rejected,0))&gt;0, round(100*coalesce(rejected,0)/(coalesce(accepted,0)+coalesce(rejected,0)),1), 0) | sort - accepted | head 20</query>
           <earliest>$time.earliest$</earliest>
           <latest>$time.latest$</latest>
         </search>
@@ -437,7 +437,7 @@
       <title>Connector Usage by User</title>
       <table>
         <search>
-          <query>`claude_index` sourcetype="anthropic:analytics:user_activity" (("$user$"="*") OR email="$user$") | stats sum('chat_metrics.connectors_used_count') AS chat sum('cowork_metrics.connectors_used_count') AS cowork by email | eval total=coalesce(chat,0)+coalesce(cowork,0) | where total&gt;0 | sort - total | head 20</query>
+          <query>`claude_index` sourcetype="anthropic:analytics:user_activity" (("$user$"="*") OR email="$user$") | `claude_latest_load` | stats sum('chat_metrics.connectors_used_count') AS chat sum('cowork_metrics.connectors_used_count') AS cowork by email | eval total=coalesce(chat,0)+coalesce(cowork,0) | where total&gt;0 | sort - total | head 20</query>
           <earliest>$time.earliest$</earliest>
           <latest>$time.latest$</latest>
         </search>
